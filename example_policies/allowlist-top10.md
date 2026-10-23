@@ -36,10 +36,10 @@ Check it before enforcing:
 
     distrust list --policy example_policies/allowlist-top10.json
 
-Enforce in chrome only:
+Enforce in chrome:
 
-    distrust apply --policy example_policies/allowlist-top10.json --backends chrome
+    sudo distrust apply --policy example_policies/allowlist-top10.json --backends chrome
 
-Enforce globally, all recognised trust stores:
+Undo:
 
-    distrust apply --policy example_policies/allowlist-top10.json
+    sudo distrust apply --policy example_policies/empty-policy.json --backends chrome

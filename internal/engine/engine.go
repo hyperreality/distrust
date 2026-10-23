@@ -64,6 +64,19 @@ func (en *Engine) selected(b backend.Backend) bool {
 	return false
 }
 
+// AdminBackends lists the selected, available backends that need admin
+// rights to change and that uses reports as involved in an operation.
+func (en *Engine) AdminBackends(uses func(backend string) bool) []string {
+	var out []string
+	det := en.Detect()
+	for _, b := range backend.All() {
+		if d := det[b.Name()]; en.selected(b) && d.Available && d.NeedsAdmin && uses(b.Name()) {
+			out = append(out, b.Name())
+		}
+	}
+	return out
+}
+
 // Result collects per-backend outcomes of an operation.
 type Result struct {
 	Errors  map[string]error

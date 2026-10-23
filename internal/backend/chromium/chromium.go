@@ -166,7 +166,7 @@ func (c *Chromium) Detect(env *backend.Env) backend.Detection {
 		d.Reason = "no Chromium-based browser found"
 		return d
 	}
-	d.Available = true
+	d.Available, d.NeedsAdmin = true, true
 	d.Writable = sysx.IsAdmin()
 	if !d.Writable {
 		d.Reason = "policy directories are machine-wide: run as root"

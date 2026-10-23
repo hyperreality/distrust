@@ -37,7 +37,7 @@ func (k *Keychain) Detect(env *backend.Env) backend.Detection {
 		return backend.Detection{Reason: "security(1) not found"}
 	}
 	return backend.Detection{
-		Available: true, Writable: sysx.IsAdmin(), Tools: []string{sec},
+		Available: true, Writable: sysx.IsAdmin(), NeedsAdmin: true, Tools: []string{sec},
 		Locations: []backend.Location{{Path: systemKeychain, Kind: "admin trust settings"}},
 	}
 }

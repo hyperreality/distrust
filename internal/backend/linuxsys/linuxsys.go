@@ -148,7 +148,7 @@ func (s *System) Detect(env *backend.Env) backend.Detection {
 	if f == nil {
 		return backend.Detection{Reason: "no supported ca-certificates / p11-kit setup found"}
 	}
-	d := backend.Detection{Available: true, Writable: sysx.IsAdmin(), Tools: []string{strings.Join(f.Update, " ")}}
+	d := backend.Detection{Available: true, Writable: sysx.IsAdmin(), NeedsAdmin: true, Tools: []string{strings.Join(f.Update, " ")}}
 	for _, b := range f.Bundles {
 		d.Locations = append(d.Locations, backend.Location{Path: b, Kind: f.Name + " bundle"})
 	}

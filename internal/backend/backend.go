@@ -40,12 +40,16 @@ type Location struct {
 
 // Detection describes what a backend found on this host.
 type Detection struct {
-	Available bool       `json:"available"`
-	Writable  bool       `json:"writable"`
-	Reason    string     `json:"reason,omitempty"`
-	Tools     []string   `json:"tools,omitempty"`
-	Locations []Location `json:"locations"`
-	Notes     []string   `json:"notes,omitempty"`
+	Available bool `json:"available"`
+	Writable  bool `json:"writable"`
+	// NeedsAdmin means changes always require root/Administrator (machine-wide
+	// stores and policies), so the CLI refuses to run without it instead of
+	// skipping the backend.
+	NeedsAdmin bool       `json:"needs_admin,omitempty"`
+	Reason     string     `json:"reason,omitempty"`
+	Tools      []string   `json:"tools,omitempty"`
+	Locations  []Location `json:"locations"`
+	Notes      []string   `json:"notes,omitempty"`
 }
 
 // LocState is the trust state for one location.

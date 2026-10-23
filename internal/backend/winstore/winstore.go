@@ -50,7 +50,7 @@ func (s *Store) Detect(env *backend.Env) backend.Detection {
 		return backend.Detection{Reason: "certutil.exe not found"}
 	}
 	return backend.Detection{
-		Available: true, Writable: sysx.IsAdmin(), Tools: []string{certutilExe()},
+		Available: true, Writable: sysx.IsAdmin(), NeedsAdmin: true, Tools: []string{certutilExe()},
 		Locations: []backend.Location{
 			{Path: `Cert:\LocalMachine\Disallowed`, Kind: "disallowed store"},
 			{Path: `Cert:\LocalMachine\Root`, Kind: "root store"},

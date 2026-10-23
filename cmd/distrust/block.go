@@ -94,6 +94,11 @@ func cmdBlock(g *globals, args []string) int {
 	}
 	fmt.Println()
 
+	if !*dry {
+		if err := s.requireAdmin(func(b string) bool { return e.Targets(b) || s.st.Has(b, e.ID) }); err != nil {
+			return fail(err)
+		}
+	}
 	s.en.DryRun = *dry
 	stored := &e
 	if !*dry {

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -36,9 +37,9 @@ Usage:
   distrust verify [id|cert.pem]      x509 chain check per store to confirm
 
 Global flags (any position):
-  --policy FILE     policy file (default /etc/distrust/policy.json as root,
-                    ~/.config/distrust/policy.json otherwise)
-  --state-dir DIR   state directory (default /var/lib/distrust as root)
+  --policy FILE     policy file (default /etc/distrust/policy.json; on
+                    Windows %ProgramData%\distrust when elevated)
+  --state-dir DIR   state directory (default /var/lib/distrust)
   --json            machine readable output
   -v                verbose (per-location detail)
 
@@ -87,7 +88,22 @@ func main() {
 		fmt.Fprintf(os.Stderr, "distrust: unknown command %q\n\n%s", cmd, usage)
 		os.Exit(exitUsage)
 	}
+	// On Linux the policy, state and most stores are machine-wide: a single
+	// root scope avoids per-user state that root runs cannot see or undo.
+	if runtime.GOOS == "linux" && !sysx.IsAdmin() && !isHelp(args) {
+		fmt.Fprintf(os.Stderr, "distrust: must run as root: sudo %s\n", strings.Join(os.Args, " "))
+		os.Exit(exitErr)
+	}
 	os.Exit(f(&globals{out: os.Stdout}, args))
+}
+
+func isHelp(args []string) bool {
+	for _, a := range args {
+		if a == "-h" || a == "--help" || a == "-help" {
+			return true
+		}
+	}
+	return false
 }
 
 // splitCommand finds the subcommand, letting global flags precede it
@@ -191,6 +207,23 @@ func (s *session) save(policyToo bool) error {
 	return s.st.Save()
 }
 
+// requireAdmin fails when a backend involved in the operation (per uses) can
+// only be changed with admin rights that this process lacks.
+func (s *session) requireAdmin(uses func(backend string) bool) error {
+	if sysx.IsAdmin() {
+		return nil
+	}
+	names := s.en.AdminBackends(uses)
+	if len(names) == 0 {
+		return nil
+	}
+	how := "run as root"
+	if runtime.GOOS == "windows" {
+		how = "run from an elevated (Administrator) prompt"
+	}
+	return fmt.Errorf("the %s backend(s) change machine-wide settings: %s, or exclude them with --backends", strings.Join(names, ", "), how)
+}
+
 // findEntry resolves id in the policy, then among state entries pending unblock.
 func (s *session) findEntry(id string) (*policy.Entry, bool, error) {
 	if e, err := s.pol.Find(id); err == nil {
@@ -243,6 +276,11 @@ func cmdUnblock(g *globals, args []string) int {
 		return fail(err)
 	}
 	ecopy := *e
+	if !*dry {
+		if err := s.requireAdmin(func(b string) bool { return s.st.Has(b, ecopy.ID) }); err != nil {
+			return fail(err)
+		}
+	}
 	s.en.DryRun = *dry
 	fmt.Printf("Unblocking %s  %s\n", ecopy.ID, ecopy.Name())
 	code := reportResult(s.en.Unblock(&ecopy), g.verbose)
@@ -278,6 +316,11 @@ func cmdApply(g *globals, args []string) int {
 	}
 	defer s.unlock()
 	s.en.DryRun, s.en.Only = *dry, only
+	if !*dry {
+		if err := s.requireAdmin(func(b string) bool { return policyUses(s.pol, s.st, b) }); err != nil {
+			return fail(err)
+		}
+	}
 	s.en.Checkpoint = s.st.Save
 	s.en.Stopped = stopOnSignal()
 	if !*quiet {
@@ -293,6 +336,20 @@ func cmdApply(g *globals, args []string) int {
 		fmt.Println("Converged.")
 	}
 	return code
+}
+
+// policyUses reports whether apply would touch backend b: an entry targets it
+// or it holds records to revert.
+func policyUses(pol *policy.Policy, st *state.State, b string) bool {
+	if len(st.IDs(b)) > 0 {
+		return true
+	}
+	for i := range pol.Entries {
+		if pol.Entries[i].Targets(b) {
+			return true
+		}
+	}
+	return false
 }
 
 // stopOnSignal makes the first SIGINT/SIGTERM a request to stop after the

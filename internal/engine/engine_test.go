@@ -15,12 +15,13 @@ type fake struct {
 	name    string
 	blocked map[string]bool
 	calls   int
+	admin   bool
 }
 
 func (f *fake) Name() string        { return f.name }
 func (f *fake) Description() string { return "fake" }
 func (f *fake) Detect(*backend.Env) backend.Detection {
-	return backend.Detection{Available: true, Writable: true}
+	return backend.Detection{Available: true, Writable: true, NeedsAdmin: f.admin}
 }
 func (f *fake) Verify(env *backend.Env, e *policy.Entry) []backend.LocState { return f.Status(env, e) }
 func (f *fake) Status(env *backend.Env, e *policy.Entry) []backend.LocState {
@@ -142,5 +143,17 @@ func TestApplyCheckpointsAndStops(t *testing.T) {
 	}
 	if len(f.blocked) != 0 || len(onDisk.IDs("f3")) != 0 {
 		t.Fatalf("left blocked: %v", f.blocked)
+	}
+}
+
+func TestAdminBackends(t *testing.T) {
+	backend.Register(&fake{name: "fa", blocked: map[string]bool{}, admin: true})
+	backend.Register(&fake{name: "fu", blocked: map[string]bool{}})
+	en := &Engine{Policy: &policy.Policy{}, State: &state.State{}, Only: []string{"fa", "fu"}}
+	if got := en.AdminBackends(func(string) bool { return true }); len(got) != 1 || got[0] != "fa" {
+		t.Fatalf("AdminBackends = %v, want [fa]", got)
+	}
+	if got := en.AdminBackends(func(b string) bool { return b == "fu" }); len(got) != 0 {
+		t.Fatalf("uninvolved admin backend reported: %v", got)
 	}
 }
