@@ -201,10 +201,26 @@ func (n *NSS) softCerts(db string) ([]softCert, error) {
 	return out, nil
 }
 
-func (n *NSS) invalidate(db string) {
+// remember updates the cached soft-token listing of db after a change made
+// through certutil, sparing a full re-listing (one certutil call per
+// certificate) for every entry. trust == "" means the cert was deleted.
+func (n *NSS) remember(db string, sc softCert) {
 	n.mu.Lock()
-	delete(n.soft, db)
-	n.mu.Unlock()
+	defer n.mu.Unlock()
+	soft, ok := n.soft[db]
+	if !ok {
+		return
+	}
+	out := soft[:0:0]
+	for _, s := range soft {
+		if s.Cert.SHA256 != sc.Cert.SHA256 {
+			out = append(out, s)
+		}
+	}
+	if sc.Trust != "" {
+		out = append(out, sc)
+	}
+	n.soft[db] = out
 }
 
 func find(soft []softCert, sha string) *softCert {
@@ -249,7 +265,6 @@ func (n *NSS) Block(env *backend.Env, e *policy.Entry) error {
 				errs = append(errs, err.Error())
 			}
 		}
-		n.invalidate(db)
 		if inUse(db) && !env.DryRun {
 			env.Logf(n.Name(), "note: %s is in use; restart the application to pick up the change", db)
 		}
@@ -291,6 +306,7 @@ func (n *NSS) blockOne(env *backend.Env, rec *record, db string, soft []softCert
 		if _, err := sysx.Run(sysx.Cmd{Name: cu, Args: []string{"-M", "-d", "sql:" + db, "-n", sc.Nick, "-t", distrustFlags}, As: db}); err != nil {
 			return err
 		}
+		n.remember(db, softCert{Nick: sc.Nick, Trust: distrustFlags, Cert: c})
 		if prev == nil { // keep the original flags if we touched this before
 			rec.DBs[db] = append(rec.DBs[db], item{SHA256: c.SHA256, Nick: sc.Nick, PrevTrust: sc.Trust})
 		}
@@ -309,6 +325,7 @@ func (n *NSS) blockOne(env *backend.Env, rec *record, db string, soft []softCert
 	if _, err := sysx.Run(sysx.Cmd{Name: cu, Args: []string{"-A", "-d", "sql:" + db, "-n", nick, "-t", distrustFlags, "-a", "-i", tmp}, As: db}); err != nil {
 		return err
 	}
+	n.remember(db, softCert{Nick: nick, Trust: distrustFlags, Cert: c})
 	if prev == nil {
 		rec.DBs[db] = append(rec.DBs[db], item{SHA256: c.SHA256, Nick: nick, Added: true})
 	}
@@ -340,6 +357,7 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 		for _, it := range items {
 			sc := find(soft, it.SHA256)
 			var args []string
+			var after softCert
 			switch {
 			case sc == nil:
 				env.Logf(n.Name(), "skip %q in %s (already gone)", it.Nick, db)
@@ -347,6 +365,7 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 			case it.Added:
 				env.Logf(n.Name(), "delete %q from %s", sc.Nick, db)
 				args = []string{"-D", "-d", "sql:" + db, "-n", sc.Nick}
+				after = softCert{Cert: sc.Cert}
 			default:
 				prev := it.PrevTrust
 				if prev == "" {
@@ -354,6 +373,7 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 				}
 				env.Logf(n.Name(), "restore trust %s on %q in %s", prev, sc.Nick, db)
 				args = []string{"-M", "-d", "sql:" + db, "-n", sc.Nick, "-t", prev}
+				after = softCert{Nick: sc.Nick, Trust: prev, Cert: sc.Cert}
 			}
 			if env.DryRun {
 				continue
@@ -361,9 +381,10 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 			if _, err := sysx.Run(sysx.Cmd{Name: cu, Args: args, As: db}); err != nil {
 				errs = append(errs, err.Error())
 				keep = append(keep, it)
+				continue
 			}
+			n.remember(db, after)
 		}
-		n.invalidate(db)
 		if len(keep) == 0 {
 			delete(rec.DBs, db)
 		} else {

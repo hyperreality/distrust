@@ -5,6 +5,7 @@ package engine
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -26,6 +27,11 @@ type Engine struct {
 	Only []string
 	// Probe is passed to backends' Verify (see backend.Env.Probe).
 	Probe string
+	// Checkpoint, when set, persists the state after each entry so that undo
+	// records survive an interrupted run.
+	Checkpoint func() error
+	// Stopped, when set, is polled between entries; true ends Apply early.
+	Stopped func() bool
 
 	detect map[string]backend.Detection
 }
@@ -142,14 +148,36 @@ func (en *Engine) ApplyEntry(e *policy.Entry) *Result {
 	return res
 }
 
+// ErrInterrupted is reported when Stopped ends Apply early.
+var ErrInterrupted = errors.New("interrupted; the rest of the policy was not applied")
+
+// step checkpoints after one unit of work and reports whether to go on.
+func (en *Engine) step(res *Result) bool {
+	if en.Checkpoint != nil && !en.DryRun {
+		if err := en.Checkpoint(); err != nil {
+			res.Errors["state"] = err
+			return false
+		}
+	}
+	if en.Stopped != nil && en.Stopped() {
+		res.Errors["apply"] = ErrInterrupted
+		return false
+	}
+	return true
+}
+
 // Apply converges the whole policy, including unblocking orphaned records.
 func (en *Engine) Apply() *Result {
 	res := newResult()
 	inPolicy := map[string]bool{}
 	for i := range en.Policy.Entries {
-		e := &en.Policy.Entries[i]
-		inPolicy[e.ID] = true
-		res.merge(en.ApplyEntry(e))
+		inPolicy[en.Policy.Entries[i].ID] = true
+	}
+	for i := range en.Policy.Entries {
+		res.merge(en.ApplyEntry(&en.Policy.Entries[i]))
+		if !en.step(res) {
+			return res
+		}
 	}
 	env := en.Env()
 	for _, b := range backend.All() {
@@ -169,6 +197,9 @@ func (en *Engine) Apply() *Result {
 			}
 			if err := b.Unblock(env, &e); err != nil {
 				res.Errors[b.Name()] = err
+			}
+			if !en.step(res) {
+				return res
 			}
 		}
 	}

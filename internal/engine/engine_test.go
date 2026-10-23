@@ -107,3 +107,40 @@ func TestExplicitUnavailableBackendIsError(t *testing.T) {
 		t.Fatalf("unregistered backend filtered by Only should be ignored, got %v", res.Err())
 	}
 }
+
+// An interrupted apply must leave undo records on disk for every entry it
+// already enforced, so a later apply can revert them.
+func TestApplyCheckpointsAndStops(t *testing.T) {
+	f := &fake{name: "f3", blocked: map[string]bool{}}
+	backend.Register(f)
+	dir := t.TempDir()
+	pol, _ := policy.Load(filepath.Join(dir, "policy.json"))
+	st, _ := state.Load(filepath.Join(dir, "state"))
+	for _, n := range []string{"A", "B", "C"} {
+		ca, _ := testutil.CA(t, n, nil)
+		pol.Upsert(policy.NewEntry(ca, nil, policy.MatchSPKI, nil, ""))
+	}
+	en := &Engine{Policy: pol, State: st, Only: []string{"f3"}, Checkpoint: st.Save}
+	en.Stopped = func() bool { return f.calls == 2 }
+
+	if err := en.Apply().Err(); err == nil {
+		t.Fatal("stopped apply should report an error")
+	}
+	if f.calls != 2 {
+		t.Fatalf("apply went on after the stop request: %d entries blocked", f.calls)
+	}
+	onDisk, _ := state.Load(filepath.Join(dir, "state"))
+	if got := len(onDisk.IDs("f3")); got != 2 {
+		t.Fatalf("state on disk has %d records, want 2", got)
+	}
+
+	// Emptying the policy reverts what the interrupted run did.
+	pol.Entries = nil
+	en = &Engine{Policy: pol, State: onDisk, Only: []string{"f3"}, Checkpoint: onDisk.Save}
+	if err := en.Apply().Err(); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.blocked) != 0 || len(onDisk.IDs("f3")) != 0 {
+		t.Fatalf("left blocked: %v", f.blocked)
+	}
+}
