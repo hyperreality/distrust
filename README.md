@@ -54,6 +54,32 @@ Runtime helpers (used only if present): `certutil`, `vfychain` and `modutil` fro
 
 ## Examples
 
+### Allow top 25 certs only
+
+```sh
+# Apply top25 policy to Chromium-based browsers only
+sudo distrust apply --policy example_policies/allowlist-top25.json --backends chromium
+
+# Undo previous command (reset to empty policy)
+sudo distrust apply --policy example_policies/empty-policy.json --backends chromium
+```
+
+### Exploring your system
+
+```sh
+# Show available backends to manage
+sudo ./distrust backends
+
+# Show trusted/distrusted certs
+sudo ./distrust list
+
+# Find app-private bundles and keystores, bring them under management
+sudo distrust scan --paths /opt,/home,/usr/lib/python3
+sudo distrust scan --adopt && sudo distrust apply
+```
+
+### Blocking examples
+
 ```sh
 # Block the root behind a site (servers rarely send the root; it is found in local stores)
 sudo distrust block --from-url evil.example:443
@@ -71,15 +97,7 @@ sudo distrust unblock 96bcec062649
 distrust status ./ca.pem -v
 sudo distrust verify 0376ab1d54c5     # exit code 3 if any targeted store still trusts it
 
-# Find app-private bundles and keystores, bring them under management
-sudo distrust scan --paths /opt,/home,/usr/lib/python3
-sudo distrust scan --adopt && sudo distrust apply
 
-# Apply a policy to a particular backend (e.g. Chromium-based browsers)
-sudo distrust apply --policy example_policies/allowlist-top10.json --backends chromium
-
-# Undo previous command (reset to empty policy)
-sudo distrust apply --policy example_policies/empty-policy.json --backends chromium
 ```
 
 ## Design
