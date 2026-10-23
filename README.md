@@ -75,10 +75,10 @@ sudo distrust verify 0376ab1d54c5     # exit code 3 if any targeted store still 
 sudo distrust scan --paths /opt,/home,/usr/lib/python3
 sudo distrust scan --adopt && sudo distrust apply
 
-# Apply a policy to a particular backend
+# Apply a policy to a particular backend (e.g. Chromium-based browsers)
 sudo distrust apply --policy example_policies/allowlist-top10.json --backends chromium
 
-# Undo (reset to empty policy)
+# Undo previous command (reset to empty policy)
 sudo distrust apply --policy example_policies/empty-policy.json --backends chromium
 ```
 

@@ -45,6 +45,12 @@ type System struct {
 
 	mu    sync.Mutex
 	cache map[string][]*certs.Cert
+
+	// batch defers regeneration to End; pending records that it is due and
+	// blocked the entries to check once the bundle is rebuilt.
+	batch   bool
+	pending bool
+	blocked []*policy.Entry
 }
 
 type flavor struct {
@@ -283,21 +289,58 @@ func (s *System) Block(env *backend.Env, e *policy.Entry) error {
 	// Regenerate if we changed something, or the bundle still has the cert
 	// (e.g. a previous run was interrupted before regenerating).
 	if changed || s.bundleHas(f, e) != "" {
-		if err := s.regenerate(env, f); err != nil {
+		if s.batch {
+			s.pending = true
+			s.blocked = append(s.blocked, e)
+		} else if err := s.regenerate(env, f); err != nil {
 			return err
 		}
 	}
 	if env.DryRun {
 		return nil
 	}
-	if left := s.bundleHas(f, e); left != "" && len(rec.Deselected)+len(rec.Quarantined) == 0 && rec.Blocklisted == "" {
-		return fmt.Errorf("%s still contains %s but no source file was found to remove", left, e.Name())
+	if !s.batch {
+		if err := s.checkGone(env, f, e, &rec); err != nil {
+			return err
+		}
 	}
 	if len(rec.Deselected)+len(rec.Quarantined) == 0 && rec.Blocklisted == "" {
 		env.State.Delete(s.Name(), e.ID)
 		return nil
 	}
 	return env.State.Put(s.Name(), e, rec)
+}
+
+// checkGone fails if the bundle still holds e although we found nothing to
+// remove (the cert comes from a source we do not manage).
+func (s *System) checkGone(env *backend.Env, f *flavor, e *policy.Entry, rec *record) error {
+	if left := s.bundleHas(f, e); left != "" && len(rec.Deselected)+len(rec.Quarantined) == 0 && rec.Blocklisted == "" {
+		return fmt.Errorf("%s still contains %s but no source file was found to remove", left, e.Name())
+	}
+	return nil
+}
+
+// Begin starts deferring regeneration (see backend.Batcher).
+func (s *System) Begin(env *backend.Env) { s.batch, s.pending, s.blocked = true, false, nil }
+
+// End regenerates once for every change made since Begin.
+func (s *System) End(env *backend.Env) error {
+	f := s.flavor()
+	pending, blocked := s.pending, s.blocked
+	s.batch, s.pending, s.blocked = false, false, nil
+	if f == nil || !pending {
+		return nil
+	}
+	if err := s.regenerate(env, f); err != nil || env.DryRun {
+		return err
+	}
+	var errs []error
+	for _, e := range blocked {
+		var rec record
+		env.State.Get(s.Name(), e.ID, &rec)
+		errs = append(errs, s.checkGone(env, f, e, &rec))
+	}
+	return errors.Join(errs...)
 }
 
 func (s *System) needRoot(env *backend.Env) error {
@@ -461,7 +504,9 @@ func (s *System) Unblock(env *backend.Env, e *policy.Entry) error {
 			}
 		}
 	}
-	if err := s.regenerate(env, f); err != nil {
+	if s.batch {
+		s.pending = true
+	} else if err := s.regenerate(env, f); err != nil {
 		return err
 	}
 	if !env.DryRun {

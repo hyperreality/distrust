@@ -157,3 +157,36 @@ func TestAdminBackends(t *testing.T) {
 		t.Fatalf("uninvolved admin backend reported: %v", got)
 	}
 }
+
+// batcher counts finishing steps around an Apply.
+type batcher struct {
+	fake
+	begun, ended int
+}
+
+func (b *batcher) Begin(*backend.Env)     { b.begun++ }
+func (b *batcher) End(*backend.Env) error { b.ended++; return nil }
+
+func TestApplyBatchesFinishingStep(t *testing.T) {
+	b := &batcher{fake: fake{name: "fb", blocked: map[string]bool{}}}
+	backend.Register(b)
+	dir := t.TempDir()
+	pol, _ := policy.Load(filepath.Join(dir, "policy.json"))
+	st, _ := state.Load(filepath.Join(dir, "state"))
+	for _, n := range []string{"A", "B", "C"} {
+		ca, _ := testutil.CA(t, n, nil)
+		pol.Upsert(policy.NewEntry(ca, nil, policy.MatchSPKI, nil, ""))
+	}
+	en := &Engine{Policy: pol, State: st, Only: []string{"fb"}}
+	en.Apply()
+	if b.calls != 3 || b.begun != 1 || b.ended != 1 {
+		t.Fatalf("calls=%d begun=%d ended=%d, want 3/1/1", b.calls, b.begun, b.ended)
+	}
+	// End must also run when the apply is stopped early.
+	pol.Entries = nil
+	en.Stopped = func() bool { return true }
+	en.Apply()
+	if b.ended != 2 {
+		t.Fatalf("End not run after a stopped apply (ended=%d)", b.ended)
+	}
+}

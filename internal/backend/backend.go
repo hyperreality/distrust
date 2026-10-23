@@ -188,3 +188,12 @@ func Count(ls []LocState, t Trust) int {
 type CertLister interface {
 	Certs(env *Env) []*certs.Cert
 }
+
+// Batcher is implemented by backends with an expensive finishing step (e.g.
+// regenerating the system bundle). Between Begin and End, Block and Unblock
+// may defer that step; End performs it once, and must run even when the
+// batch is cut short so that the store is consistent with the state.
+type Batcher interface {
+	Begin(env *Env)
+	End(env *Env) error
+}

@@ -182,6 +182,17 @@ func (en *Engine) step(res *Result) bool {
 // Apply converges the whole policy, including unblocking orphaned records.
 func (en *Engine) Apply() *Result {
 	res := newResult()
+	env := en.Env()
+	for _, b := range backend.All() {
+		if bt, ok := b.(backend.Batcher); ok && en.selected(b) {
+			bt.Begin(env)
+			defer func(name string) {
+				if err := bt.End(env); err != nil {
+					res.Errors[name] = errors.Join(res.Errors[name], err)
+				}
+			}(b.Name())
+		}
+	}
 	inPolicy := map[string]bool{}
 	for i := range en.Policy.Entries {
 		inPolicy[en.Policy.Entries[i].ID] = true
@@ -192,7 +203,6 @@ func (en *Engine) Apply() *Result {
 			return res
 		}
 	}
-	env := en.Env()
 	for _, b := range backend.All() {
 		if !en.selected(b) {
 			continue
