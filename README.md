@@ -76,10 +76,10 @@ sudo distrust scan --paths /opt,/home,/usr/lib/python3
 sudo distrust scan --adopt && sudo distrust apply
 
 # Apply a policy to a particular backend
-sudo distrust apply --policy example_policies/allowlist-top10.json --backends chrome
+sudo distrust apply --policy example_policies/allowlist-top10.json --backends chromium
 
 # Undo (reset to empty policy)
-sudo distrust apply --policy example_policies/empty-policy.json --backends chrome
+sudo distrust apply --policy example_policies/empty-policy.json --backends chromium
 ```
 
 ## Design
