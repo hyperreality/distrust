@@ -9,6 +9,7 @@
 package nss
 
 import (
+	"crypto/x509"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -250,6 +251,14 @@ func find(soft []softCert, sha string) *softCert {
 	return nil
 }
 
+// unusable reports keys that NSS cannot parse (e.g. ML-DSA post-quantum
+// pilot roots): certutil refuses to import such a certificate, and NSS cannot
+// trust it either, so there is nothing to distrust. Go recognising the key
+// type is the test, as NSS supports a subset of Go's algorithms.
+func unusable(c *certs.Cert) bool { return c.X.PublicKeyAlgorithm == x509.UnknownPublicKeyAlgorithm }
+
+const unusableNote = "key type unsupported by NSS: cannot be trusted"
+
 func nickFor(e *policy.Entry, i int) string {
 	if i == 0 {
 		return "distrust-" + e.ID
@@ -331,6 +340,9 @@ func (n *NSS) blockOne(env *backend.Env, rec *record, db string, soft []softCert
 		return nil
 	}
 	nick := nickFor(e, i)
+	if unusable(c) {
+		return nil
+	}
 	env.Logf(n.Name(), "import %q with trust %s into %s", nick, distrustFlags, db)
 	if env.DryRun {
 		return nil
@@ -381,8 +393,11 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 				env.Logf(n.Name(), "skip %q in %s (already gone)", it.Nick, db)
 				continue
 			case it.Added:
-				env.Logf(n.Name(), "delete %q from %s", sc.Nick, db)
-				args = []string{"-D", "-d", "sql:" + db, "-n", sc.Nick}
+				// Delete by the nickname we imported it under: certutil -L shows
+				// one shared nickname for all certs with the same subject, which
+				// stops resolving to a same-subject variant once the first goes.
+				env.Logf(n.Name(), "delete %q from %s", it.Nick, db)
+				args = []string{"-D", "-d", "sql:" + db, "-n", it.Nick}
 				after = softCert{Cert: sc.Cert}
 			default:
 				prev := it.PrevTrust
@@ -396,7 +411,12 @@ func (n *NSS) Unblock(env *backend.Env, e *policy.Entry) error {
 			if env.DryRun {
 				continue
 			}
-			if _, err := sysx.Run(sysx.Cmd{Name: cu, Args: args, As: db}); err != nil {
+			_, err := sysx.Run(sysx.Cmd{Name: cu, Args: args, As: db})
+			if err != nil && it.Added && sc.Nick != it.Nick {
+				// Records adopted from an earlier run may hold the listed name.
+				_, err = sysx.Run(sysx.Cmd{Name: cu, Args: []string{"-D", "-d", "sql:" + db, "-n", sc.Nick}, As: db})
+			}
+			if err != nil {
 				errs = append(errs, err.Error())
 				keep = append(keep, it)
 				continue
@@ -444,6 +464,8 @@ func (n *NSS) Status(env *backend.Env, e *policy.Entry) []backend.LocState {
 				} else {
 					s.Trust = n.builtinTrust(c) // no SSL trust set locally: built-ins decide
 				}
+			} else if unusable(c) {
+				s.Trust, s.Detail = backend.Absent, unusableNote
 			} else if !certs.SelfSigned(c.X) {
 				// An intermediate is trusted if it chains to any anchor in this DB.
 				s.Trust, s.Detail = backend.Unknown, "chain check failed"
@@ -491,6 +513,10 @@ func (n *NSS) Verify(env *backend.Env, e *policy.Entry) []backend.LocState {
 		}
 		var states []backend.LocState
 		for _, c := range e.Parsed() {
+			if unusable(c) {
+				states = append(states, backend.LocState{Trust: backend.Absent, Detail: unusableNote})
+				continue
+			}
 			t, detail := n.vfy(tmp, c)
 			states = append(states, backend.LocState{Trust: t, Detail: detail})
 		}

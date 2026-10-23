@@ -106,7 +106,7 @@ func (r *Result) Err() error {
 
 func (r *Result) merge(o *Result) {
 	for k, v := range o.Errors {
-		r.Errors[k] = v
+		r.Errors[k] = errors.Join(r.Errors[k], v) // keep every entry's failure
 	}
 	for k, v := range o.Skipped {
 		r.Skipped[k] = v
