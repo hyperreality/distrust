@@ -1,14 +1,14 @@
 # distrust
 
-Why does my system trust over 150 root signing authorities, most of which I will never use? The recent [eMudhra CA compromise](https://emudhra.we-have-a-problem.com/) highlighted the flaws with this model. 
+Why does my system trust over 150 root signing authorities, most of which I don't need? The recent [eMudhra CA compromise](https://emudhra.we-have-a-problem.com/) highlighted the flaws with this model. 
 
-**distrust** is a tool for blocking CA certificates across every trust store on a host, not only the OS bundle. Confusingly, browsers (NSS, Chrome Root Store), OpenSSL/GnuTLS consumers (curl, wget, Python, Go), Java, and the standalone PEM bundles that apps ship (certifi, conda, botocore) each keep their own copy of the roots. Removing a CA from one of them leaves it trusted in many other places.
+**distrust** is a policy-based tool for blocking CA certificates across every trust store on a host. It aims to simplify the management of the mess of root stores: browsers (NSS, Chrome Root Store), OpenSSL/GnuTLS consumers (curl, wget, Python, Go), Java, and the standalone PEM bundles that apps ship (certifi, conda, botocore).
 
-**distrust** ships with example policies that block all CAs except the top 10. Try it and see what breaks!
+**distrust** ships with an example policy that blocks all CAs except the top 10. Try it and see what breaks!
 
 There did not appear to be existing tools to do this, probably because there is so much variance across operating system platforms, distros, and programming languages. **distrust** is therefore shamelessly vibe-coded to deal with all these edge cases.
 
-Tested on Debian Linux and Windows. Alpha release, expect breakage!
+Tested on Debian Linux and Windows. Alpha release, use with care.
 
 ## Usage
 
@@ -30,23 +30,24 @@ Global flags work in any position: `--policy FILE`, `--state-dir DIR`, `--json`,
 
 ## Build & install
 
+Uses go stdlib only, with no dependencies.
+
 ### Linux
 
 ```sh
-go build -o distrust ./cmd/distrust          # stdlib only, no dependencies
-sudo contrib/install.sh                      # binary + systemd timer/path units + apt/pacman hook
+go build -o distrust ./cmd/distrust
 ```
 
-### macOS
+### macOS cross-compile
 
 ```sh
-GOOS=darwin go build ./cmd/distrust          # cross-compiles for macOS
+GOOS=darwin go build ./cmd/distrust
 ```
 
-### Windows
+### Windows cross-compile
 
 ```sh
-GOOS=windows go build -o distrust.exe ./cmd/distrust          # cross-compiles for Windows
+GOOS=windows go build -o distrust.exe ./cmd/distrust
 ```
 
 Runtime helpers (used only if present): `certutil`, `vfychain` and `modutil` from NSS (`apt install libnss3-tools`, `dnf install nss-tools`, `brew install nss`), `keytool` from a JDK, and `/usr/bin/openssl` for verification.
@@ -63,6 +64,9 @@ sudo distrust block ./corp-mitm-ca.pem --backends nss
 # Block a CA already in a store, by cert or SPKI fingerprint
 sudo distrust block --sha256 03:76:AB:1D:...:5F:A7
 
+# Unblock a CA
+sudo distrust unblock 96bcec062649
+
 # Look before blocking, then confirm afterwards with real chain checks
 distrust status ./ca.pem -v
 sudo distrust verify 0376ab1d54c5     # exit code 3 if any targeted store still trusts it
@@ -70,6 +74,9 @@ sudo distrust verify 0376ab1d54c5     # exit code 3 if any targeted store still 
 # Find app-private bundles and keystores, bring them under management
 sudo distrust scan --paths /opt,/home,/usr/lib/python3
 sudo distrust scan --adopt && sudo distrust apply
+
+# Apply a policy to a particular backend
+distrust apply --policy example_policies/allowlist-top10.json --backends firefox
 ```
 
 ## Design

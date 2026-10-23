@@ -1,0 +1,12 @@
+[Unit]
+Description=Converge CA distrust policy across all trust stores
+Documentation=file:///usr/local/share/doc/distrust/README.md
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/distrust apply -q
+# certutil is run as each profile's owner; needs root to switch users.
+User=root
+Nice=10
+IOSchedulingClass=idle

@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically re-apply CA distrust policy (new profiles, package updates)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1h
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

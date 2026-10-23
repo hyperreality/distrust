@@ -1,0 +1,13 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = etc/ssl/certs/*
+Target = usr/share/ca-certificates/*
+Target = usr/lib/jvm/*
+Target = usr/lib/python3*/site-packages/certifi/*
+
+[Action]
+Description = Re-applying CA distrust policy...
+When = PostTransaction
+Exec = /usr/local/bin/distrust apply -q

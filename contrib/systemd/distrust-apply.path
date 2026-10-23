@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-apply CA distrust policy when the policy or system bundle changes
+
+[Path]
+PathChanged=/etc/distrust/policy.json
+PathChanged=/etc/ssl/certs/ca-certificates.crt
+PathChanged=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+Unit=distrust-apply.service
+
+[Install]
+WantedBy=paths.target
