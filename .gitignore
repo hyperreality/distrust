@@ -1,0 +1,9 @@
+distrust*
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+*.swp

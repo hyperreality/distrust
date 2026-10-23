@@ -1,0 +1,3 @@
+// Re-apply the distrust policy after every dpkg run (ca-certificates,
+// ca-certificates-java, python3-certifi, firefox... upgrades).
+DPkg::Post-Invoke { "if [ -x /usr/local/bin/distrust ]; then /usr/local/bin/distrust apply -q || true; fi"; };
