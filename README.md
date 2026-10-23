@@ -4,7 +4,7 @@ Why does my system trust over 150 root signing authorities, most of which I don'
 
 **distrust** is a policy-based tool for blocking CA certificates across every trust store on a host. It aims to simplify the management of the mess of root stores: browsers (NSS, Chrome Root Store), OpenSSL/GnuTLS consumers (curl, wget, Python, Go), Java, and the standalone PEM bundles that apps ship (certifi, conda, botocore).
 
-**distrust** ships with an example policy that blocks all CAs except the top 10. Try it and see what breaks!
+**distrust** ships with an example policy that blocks all CAs except the top 30. Try it and see what breaks!
 
 There did not appear to be existing tools to do this, probably because there is so much variance across operating system platforms, distros, and programming languages. **distrust** is therefore shamelessly vibe-coded to deal with all these edge cases.
 
@@ -57,8 +57,8 @@ Runtime helpers (used only if present): `certutil`, `vfychain` and `modutil` fro
 ### Allow top 25 certs only
 
 ```sh
-# Apply top25 policy to Chromium-based browsers only
-sudo distrust apply --policy example_policies/allowlist-top25.json --backends chromium
+# Apply top30 policy to Chromium-based browsers only
+sudo distrust apply --policy example_policies/allowlist-top30.json --backends chromium
 
 # Undo previous command (reset to empty policy)
 sudo distrust apply --policy example_policies/empty-policy.json --backends chromium

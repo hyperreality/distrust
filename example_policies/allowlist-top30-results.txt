@@ -1,0 +1,1089 @@
+allowlist-top30.json: site compatibility report
+================================================
+
+Date:    2026-10-23
+Policy:  example_policies/allowlist-top30.json (30 roots allowed, 238 blocked)
+Sites:   Tranco top 1000 (https://tranco-list.eu/top-1m.csv.zip, fetched 2026-10-23)
+
+Method
+------
+For each domain, https://<domain>/ is tried, then https://www.<domain>/.
+The first one that verifies with this host's normal CA store (Debian) is then
+fetched again with curl trusting only the 30 allowed roots (no CA path).
+A site whose chain does not reach an allowed root fails. Timeouts were retried.
+"Anchor" is the first allowed root OpenSSL reaches in the chain the server sends;
+browsers also stop at the first trusted certificate, so a site that serves a
+newer root cross-signed by an older one counts under the newer root.
+
+UNREACHABLE means neither name answered HTTPS with the normal CA store (API,
+CDN and tracking domains without a website, or sites blocking scripted
+clients). These say nothing about the policy and are left out of the totals.
+
+Summary
+-------
+Reachable sites:  734
+Verified:         721
+Failed:           13
+Unreachable:      266
+
+Failures, by the root each site needs
+-------------------------------------
+HARICA TLS RSA Root CA 2021 (7)
+   114  okcdn.ru
+   144  vk.ru
+   177  vkuserphoto.ru
+   245  userapi.com
+   313  ok.ru
+   716  rustore.ru
+   758  vkontakte.ru
+HARICA TLS ECC Root CA 2021 (2)
+    20  dzen.ru
+   958  t2.ru
+SECOM Security Communication RootCA2 (1)
+   455  yahoo.co.jp
+GlobalSign Root CA - R6 (1)
+   995  moe.video
+DigiCert TLS RSA4096 Root G5 (1)
+   271  dnsmadeeasy.com
+Actalis TLS Server RSA Root CA 2025 (1)
+   451  huawei.com
+
+Passing sites, by anchor root
+-----------------------------
+  146 DigiCert Global Root G2
+  138 GTS Root R4
+  109 Amazon Root CA 1
+   75 ISRG Root X1
+   56 ISRG Root X2
+   49 Sectigo Public Server Authentication Root R46
+   41 GlobalSign Root CA - R3
+   31 GlobalSign Root R46
+   27 DigiCert Global Root G3
+   14 GTS Root R1
+    6 Go Daddy Root Certificate Authority - G2
+    6 USERTrust ECC Certification Authority
+    5 GlobalSign Root E46
+    4 GoDaddy TLS Root CA - R1
+    3 IdenTrust Commercial Root CA 1
+    3 Starfield Root Certificate Authority - G2
+    2 SSL.com TLS ECC Root CA 2022
+    2 SSL.com TLS RSA Root CA 2022
+    2 USERTrust RSA Certification Authority
+    1 Amazon Root CA 3
+    1 SSL.com Root Certification Authority ECC
+
+Allowed roots no passing site anchored at (kept for code signing, Azure,
+legacy chains and cross-sign paths a homepage check doesn't exercise):
+  AAA Certificate Services
+  DigiCert Assured ID Root CA
+  DigiCert Global Root CA
+  DigiCert High Assurance EV Root CA
+  DigiCert Trusted Root G4
+  GlobalSign Root CA
+  Microsoft ECC Root Certificate Authority 2017
+  Microsoft RSA Root Certificate Authority 2017
+  SSL.com Root Certification Authority RSA
+
+Per-site results
+----------------
+rank  result       host  (anchor root for OK, needed root for FAIL)
+   1  OK           google.com  (GTS Root R4)
+   2  OK           cloudflare.com  (GTS Root R4)
+   3  OK           amazonaws.com  (Amazon Root CA 1)
+   4  OK           facebook.com  (DigiCert Global Root G2)
+   5  OK           gstatic.com  (GTS Root R4)
+   6  UNREACHABLE  ezviz7.com
+   7  UNREACHABLE  akamai.net
+   8  OK           googleapis.com  (GTS Root R4)
+   9  OK           microsoft.com  (DigiCert Global Root G2)
+  10  OK           fbcdn.net  (DigiCert Global Root G2)
+  11  OK           youtube.com  (GTS Root R4)
+  12  OK           apple.com  (DigiCert Global Root G3)
+  13  OK           instagram.com  (DigiCert Global Root G2)
+  14  OK           www.hicloudcam.com  (GlobalSign Root R46)
+  15  OK           mail.ru  (ISRG Root X1)
+  16  OK           twitter.com  (ISRG Root X1)
+  17  UNREACHABLE  akamaiedge.net
+  18  OK           linkedin.com  (DigiCert Global Root G2)
+  19  UNREACHABLE  akadns.net
+  20  FAIL         dzen.ru  (needs HARICA TLS ECC Root CA 2021)
+  21  OK           www.googlevideo.com  (GTS Root R4)
+  22  UNREACHABLE  domaincontrol.com
+  23  OK           googletagmanager.com  (GTS Root R4)
+  24  OK           azure.com  (DigiCert Global Root G2)
+  25  UNREACHABLE  gtld-servers.net
+  26  OK           office.com  (DigiCert Global Root G2)
+  27  OK           live.com  (DigiCert Global Root G2)
+  28  UNREACHABLE  cloudfront.net
+  29  OK           amazon.com  (DigiCert Global Root G2)
+  30  OK           appsflyersdk.com  (Amazon Root CA 1)
+  31  UNREACHABLE  shiabank.com
+  32  OK           github.com  (USERTrust ECC Certification Authority)
+  33  OK           wikipedia.org  (ISRG Root X2)
+  34  UNREACHABLE  aaplimg.com
+  35  UNREACHABLE  trafficmanager.net
+  36  OK           sharepoint.com  (DigiCert Global Root G2)
+  37  OK           fastly.net  (Starfield Root Certificate Authority - G2)
+  38  OK           cloud.microsoft  (DigiCert Global Root G2)
+  39  OK           whatsapp.net  (DigiCert Global Root G2)
+  40  UNREACHABLE  apple-dns.net
+  41  UNREACHABLE  office.net
+  42  OK           bing.com  (DigiCert Global Root G2)
+  43  OK           netflix.com  (DigiCert Global Root G3)
+  44  OK           triplinkintl.com  (Sectigo Public Server Authentication Root R46)
+  45  OK           googleusercontent.com  (GTS Root R4)
+  46  UNREACHABLE  gwfb.net
+  47  OK           x.com  (ISRG Root X1)
+  48  OK           gandi.net  (DigiCert Global Root G2)
+  49  OK           youtu.be  (GTS Root R4)
+  50  OK           doubleclick.net  (GTS Root R4)
+  51  UNREACHABLE  microsoftonline.com
+  52  OK           pinterest.com  (DigiCert Global Root G2)
+  53  OK           icloud.com  (DigiCert Global Root G3)
+  54  OK           googlesyndication.com  (GTS Root R4)
+  55  OK           wordpress.org  (ISRG Root X2)
+  56  OK           skype.com  (DigiCert Global Root G2)
+  57  OK           cloudflare.net  (ISRG Root X2)
+  58  UNREACHABLE  windows.net
+  59  OK           goo.gl  (GTS Root R4)
+  60  OK           digicert.com  (DigiCert Global Root G2)
+  61  OK           adobe.com  (DigiCert Global Root G3)
+  62  UNREACHABLE  windowsupdate.com
+  63  OK           tiktok.com  (DigiCert Global Root G3)
+  64  OK           whatsapp.com  (DigiCert Global Root G2)
+  65  UNREACHABLE  pv-cdn.net
+  66  UNREACHABLE  gvt1.com
+  67  OK           googledomains.com  (GTS Root R4)
+  68  OK           zoom.us  (DigiCert Global Root G2)
+  69  OK           yahoo.com  (DigiCert Global Root G2)
+  70  OK           myfritz.net  (DigiCert Global Root G2)
+  71  OK           endpoints.news  (Amazon Root CA 1)
+  72  OK           wa.me  (DigiCert Global Root G2)
+  73  UNREACHABLE  edgekey.net
+  74  UNREACHABLE  tiktokcdn.com
+  75  OK           roblox.com  (Sectigo Public Server Authentication Root R46)
+  76  OK           opera.com  (DigiCert Global Root G2)
+  77  OK           spotify.com  (DigiCert Global Root G2)
+  78  UNREACHABLE  lsrelayaccess.com
+  79  OK           workers.dev  (GTS Root R4)
+  80  OK           baidu.com  (GlobalSign Root CA - R3)
+  81  OK           tiktokv.com  (DigiCert Global Root G3)
+  82  UNREACHABLE  akam.net
+  83  OK           yandex.net  (GlobalSign Root R46)
+  84  OK           nginx.org  (ISRG Root X2)
+  85  OK           ntp.org  (ISRG Root X1)
+  86  OK           msn.com  (DigiCert Global Root G2)
+  87  OK           qq.com  (DigiCert Global Root G2)
+  88  UNREACHABLE  w2rt6byl5nf1opmc-a.com
+  89  UNREACHABLE  a2z.com
+  90  OK           vimeo.com  (GTS Root R4)
+  91  OK           amazonvideo.com  (Amazon Root CA 1)
+  92  UNREACHABLE  3gppnetwork.org
+  93  OK           b-cdn.net  (Sectigo Public Server Authentication Root R46)
+  94  OK           blogspot.com  (GTS Root R4)
+  95  OK           mozilla.org  (GTS Root R1)
+  96  OK           f5.com  (Sectigo Public Server Authentication Root R46)
+  97  UNREACHABLE  root-servers.net
+  98  OK           t.me  (Go Daddy Root Certificate Authority - G2)
+  99  OK           epicgames.com  (Amazon Root CA 1)
+ 100  OK           nginx.com  (ISRG Root X2)
+ 101  OK           wordpress.com  (ISRG Root X2)
+ 102  OK           yandex.ru  (GlobalSign Root E46)
+ 103  OK           reddit.com  (DigiCert Global Root G2)
+ 104  UNREACHABLE  edgesuite.net
+ 105  UNREACHABLE  aws.dev
+ 106  OK           sentry.io  (DigiCert Global Root G2)
+ 107  OK           lencr.org  (ISRG Root X2)
+ 108  UNREACHABLE  yccdn.ru
+ 109  OK           ui.com  (Amazon Root CA 1)
+ 110  OK           europa.eu  (GlobalSign Root R46)
+ 111  UNREACHABLE  gvt2.com
+ 112  OK           chatgpt.com  (GTS Root R4)
+ 113  UNREACHABLE  cdninstagram.com
+ 114  FAIL         okcdn.ru  (needs HARICA TLS RSA Root CA 2021)
+ 115  UNREACHABLE  2mdn.net
+ 116  OK           bit.ly  (Amazon Root CA 1)
+ 117  OK           ipify.org  (GTS Root R4)
+ 118  UNREACHABLE  cdn77.org
+ 119  OK           nic.ru  (GlobalSign Root CA - R3)
+ 120  OK           samsung.com  (Sectigo Public Server Authentication Root R46)
+ 121  OK           office365.com  (DigiCert Global Root G2)
+ 122  OK           intuit.com  (DigiCert Global Root G2)
+ 123  OK           aliyuncs.com  (GlobalSign Root R46)
+ 124  UNREACHABLE  fastly-edge.com
+ 125  OK           outlook.com  (DigiCert Global Root G2)
+ 126  UNREACHABLE  ytimg.com
+ 127  OK           openai.com  (GTS Root R4)
+ 128  OK           cloudflare-dns.com  (SSL.com Root Certification Authority ECC)
+ 129  OK           windows.com  (DigiCert Global Root G2)
+ 130  OK           registrar-servers.com  (SSL.com TLS ECC Root CA 2022)
+ 131  OK           github.io  (ISRG Root X1)
+ 132  OK           dropbox.com  (DigiCert Global Root G3)
+ 133  OK           skybridge.click  (ISRG Root X2)
+ 134  UNREACHABLE  amazon.dev
+ 135  OK           discord.gg  (GTS Root R4)
+ 136  OK           adobe.io  (DigiCert Global Root G2)
+ 137  UNREACHABLE  h264.io
+ 138  UNREACHABLE  static.microsoft
+ 139  OK           apache.org  (ISRG Root X1)
+ 140  OK           android.com  (GTS Root R4)
+ 141  OK           nih.gov  (Go Daddy Root Certificate Authority - G2)
+ 142  UNREACHABLE  trbcdn.net
+ 143  UNREACHABLE  akamaized.net
+ 144  FAIL         vk.ru  (needs HARICA TLS RSA Root CA 2021)
+ 145  OK           www.azurefd.net  (DigiCert Global Root G3)
+ 146  UNREACHABLE  dnsowl.com
+ 147  OK           reg.ru  (GlobalSign Root CA - R3)
+ 148  OK           vk.com  (SSL.com TLS RSA Root CA 2022)
+ 149  UNREACHABLE  dns-parking.com
+ 150  OK           t-online.de  (ISRG Root X2)
+ 151  OK           archive.org  (Go Daddy Root Certificate Authority - G2)
+ 152  OK           forms.gle  (GTS Root R1)
+ 153  OK           webex.com  (IdenTrust Commercial Root CA 1)
+ 154  OK           snapchat.com  (DigiCert Global Root G2)
+ 155  UNREACHABLE  nflxso.net
+ 156  OK           godaddy.com  (GTS Root R4)
+ 157  UNREACHABLE  tm-azurefd.net
+ 158  OK           kaspersky.com  (DigiCert Global Root G2)
+ 159  OK           crashlytics.com  (GTS Root R4)
+ 160  OK           tumblr.com  (ISRG Root X2)
+ 161  OK           nytimes.com  (DigiCert Global Root G2)
+ 162  OK           gravatar.com  (ISRG Root X2)
+ 163  UNREACHABLE  jomodns.com
+ 164  OK           google-analytics.com  (GTS Root R4)
+ 165  UNREACHABLE  amazon-adsystem.com
+ 166  UNREACHABLE  azurewebsites.net
+ 167  UNREACHABLE  ax-msedge.net
+ 168  OK           duckdns.org  (Amazon Root CA 1)
+ 169  OK           shopify.com  (GTS Root R4)
+ 170  OK           paypal.com  (DigiCert Global Root G2)
+ 171  OK           example.com  (SSL.com TLS ECC Root CA 2022)
+ 172  OK           www.ubuntu.com  (ISRG Root X1)
+ 173  UNREACHABLE  dotaplabs.net
+ 174  UNREACHABLE  spo-msedge.net
+ 175  OK           telegram.org  (GoDaddy TLS Root CA - R1)
+ 176  OK           mts.ru  (GlobalSign Root R46)
+ 177  FAIL         vkuserphoto.ru  (needs HARICA TLS RSA Root CA 2021)
+ 178  OK           scorecardresearch.com  (Amazon Root CA 1)
+ 179  OK           pki.goog  (GTS Root R4)
+ 180  UNREACHABLE  iiko.it
+ 181  OK           flickr.com  (Amazon Root CA 1)
+ 182  OK           afternic.com  (Go Daddy Root Certificate Authority - G2)
+ 183  OK           samsungcloud.com  (Sectigo Public Server Authentication Root R46)
+ 184  UNREACHABLE  virginm.net
+ 185  UNREACHABLE  unity3d.com
+ 186  OK           w3.org  (GTS Root R4)
+ 187  OK           discord.com  (GTS Root R4)
+ 188  OK           www.macromedia.com  (DigiCert Global Root G2)
+ 189  OK           soundcloud.com  (Amazon Root CA 1)
+ 190  OK           creativecommons.org  (GTS Root R4)
+ 191  OK           www.hichina.com  (GlobalSign Root R46)
+ 192  UNREACHABLE  nflximg.com
+ 193  OK           theguardian.com  (GlobalSign Root R46)
+ 194  OK           pages.dev  (GTS Root R4)
+ 195  OK           app-measurement.com  (GTS Root R4)
+ 196  OK           cnn.com  (GlobalSign Root E46)
+ 197  OK           ebay.com  (Sectigo Public Server Authentication Root R46)
+ 198  OK           medium.com  (GTS Root R4)
+ 199  OK           www.youtube-nocookie.com  (GTS Root R4)
+ 200  UNREACHABLE  ksyuncdn.com
+ 201  OK           www.mtgglobals.com  (Amazon Root CA 1)
+ 202  UNREACHABLE  yandexcloud.net
+ 203  OK           xiaomi.com  (DigiCert Global Root G2)
+ 204  OK           oracle.com  (DigiCert Global Root G2)
+ 205  OK           doi.org  (GTS Root R4)
+ 206  UNREACHABLE  ailawandorder.com
+ 207  UNREACHABLE  licdn.com
+ 208  UNREACHABLE  bybanking.com
+ 209  OK           stripe.com  (DigiCert Global Root G3)
+ 210  OK           criteo.com  (ISRG Root X1)
+ 211  UNREACHABLE  vedcdnlb.com
+ 212  UNREACHABLE  ttdns2.com
+ 213  OK           bbc.com  (GlobalSign Root R46)
+ 214  UNREACHABLE  msftconnecttest.com
+ 215  UNREACHABLE  awswaf.com
+ 216  OK           comcast.net  (Sectigo Public Server Authentication Root R46)
+ 217  OK           forbes.com  (GlobalSign Root CA - R3)
+ 218  OK           meraki.com  (Amazon Root CA 1)
+ 219  OK           sciencedirect.com  (GTS Root R4)
+ 220  OK           applovin.com  (GTS Root R1)
+ 221  UNREACHABLE  msedge.net
+ 222  OK           twitch.tv  (GlobalSign Root R46)
+ 223  UNREACHABLE  bytefcdn-oversea.com
+ 224  OK           researchgate.net  (GTS Root R4)
+ 225  UNREACHABLE  cdngslb.com
+ 226  OK           mit.edu  (DigiCert Global Root G2)
+ 227  UNREACHABLE  shifen.com
+ 228  OK           www.azureedge.net  (DigiCert Global Root G3)
+ 229  OK           wikimedia.org  (ISRG Root X2)
+ 230  UNREACHABLE  rbxcdn.com
+ 231  OK           www.cisco.com  (IdenTrust Commercial Root CA 1)
+ 232  OK           telekom.net  (ISRG Root X1)
+ 233  OK           bbc.co.uk  (GlobalSign Root R46)
+ 234  OK           cpanel.net  (Sectigo Public Server Authentication Root R46)
+ 235  OK           nist.gov  (GTS Root R4)
+ 236  OK           publicnode.com  (ISRG Root X2)
+ 237  OK           adtrafficquality.google  (GTS Root R4)
+ 238  OK           googleadservices.com  (GTS Root R4)
+ 239  OK           forter.com  (GTS Root R4)
+ 240  OK           namecheap.com  (USERTrust ECC Certification Authority)
+ 241  UNREACHABLE  omtrdc.net
+ 242  OK           t.co  (ISRG Root X2)
+ 243  UNREACHABLE  sfx.ms
+ 244  OK           sourceforge.net  (ISRG Root X2)
+ 245  FAIL         userapi.com  (needs HARICA TLS RSA Root CA 2021)
+ 246  OK           ozon.ru  (GlobalSign Root CA - R3)
+ 247  OK           amplitude.com  (Amazon Root CA 1)
+ 248  UNREACHABLE  playstation.net
+ 249  OK           hcaptcha.com  (GTS Root R4)
+ 250  UNREACHABLE  namebrightdns.com
+ 251  OK           roku.com  (GTS Root R4)
+ 252  UNREACHABLE  wsdvs.com
+ 253  UNREACHABLE  spov-msedge.net
+ 254  UNREACHABLE  cdn-apple.com
+ 255  OK           hubspot.com  (GTS Root R4)
+ 256  OK           weather.com  (DigiCert Global Root G3)
+ 257  UNREACHABLE  aliyuncsslbintl.com
+ 258  OK           alidns.com  (GlobalSign Root R46)
+ 259  OK           app-analytics-services.com  (GTS Root R4)
+ 260  OK           linktr.ee  (ISRG Root X1)
+ 261  OK           imdb.com  (Amazon Root CA 1)
+ 262  OK           canva.com  (Amazon Root CA 1)
+ 263  OK           icanhazip.com  (GTS Root R4)
+ 264  OK           who.int  (GTS Root R4)
+ 265  UNREACHABLE  name-services.com
+ 266  UNREACHABLE  alibabadns.com
+ 267  UNREACHABLE  tbcache.com
+ 268  OK           www.googletagservices.com  (GTS Root R4)
+ 269  UNREACHABLE  supertms.com
+ 270  OK           www.arubanetworks.com  (DigiCert Global Root G3)
+ 271  FAIL         dnsmadeeasy.com  (needs DigiCert TLS RSA4096 Root G5)
+ 272  OK           www.wixsite.com  (ISRG Root X1)
+ 273  UNREACHABLE  geobasket.ru
+ 274  OK           ip-api.com  (Sectigo Public Server Authentication Root R46)
+ 275  OK           googleblog.com  (GTS Root R4)
+ 276  OK           ibm.com  (DigiCert Global Root G3)
+ 277  UNREACHABLE  ttvnw.net
+ 278  OK           launchpad.net  (ISRG Root X1)
+ 279  OK           firefox-portal-detection.com  (ISRG Root X1)
+ 280  OK           www.telecid.ru  (ISRG Root X2)
+ 281  OK           quickconnect.to  (Sectigo Public Server Authentication Root R46)
+ 282  UNREACHABLE  workbox.dk
+ 283  OK           reuters.com  (Sectigo Public Server Authentication Root R46)
+ 284  UNREACHABLE  imcmdb.net
+ 285  OK           tinyurl.com  (GTS Root R4)
+ 286  UNREACHABLE  ggpht.com
+ 287  UNREACHABLE  msftncsi.com
+ 288  OK           skyhigh.cloud  (Sectigo Public Server Authentication Root R46)
+ 289  OK           booking.com  (DigiCert Global Root G2)
+ 290  OK           hp.com  (DigiCert Global Root G2)
+ 291  UNREACHABLE  avcdn.net
+ 292  OK           telegram.me  (GoDaddy TLS Root CA - R1)
+ 293  OK           miui.com  (DigiCert Global Root G2)
+ 294  OK           www.gov.uk  (GlobalSign Root CA - R3)
+ 295  UNREACHABLE  steamserver.net
+ 296  UNREACHABLE  media-amazon.com
+ 297  OK           salesforce.com  (DigiCert Global Root G2)
+ 298  OK           nature.com  (ISRG Root X1)
+ 299  OK           autodesk.com  (Amazon Root CA 1)
+ 300  OK           steampowered.com  (ISRG Root X1)
+ 301  OK           springer.com  (ISRG Root X1)
+ 302  UNREACHABLE  gamepass.com
+ 303  UNREACHABLE  tiktokcdn-us.com
+ 304  OK           vungle.com  (ISRG Root X2)
+ 305  OK           brave.com  (Amazon Root CA 1)
+ 306  UNREACHABLE  byteoversea.net
+ 307  UNREACHABLE  jsdelivr.net
+ 308  OK           www.demdex.net  (DigiCert Global Root G2)
+ 309  OK           alibaba.com  (GlobalSign Root R46)
+ 310  OK           pubmatic.com  (Amazon Root CA 1)
+ 311  UNREACHABLE  heytapmobile.com
+ 312  UNREACHABLE  wac-msedge.net
+ 313  FAIL         ok.ru  (needs HARICA TLS RSA Root CA 2021)
+ 314  OK           weibo.com  (DigiCert Global Root G2)
+ 315  OK           datadoghq.com  (DigiCert Global Root G2)
+ 316  OK           harvard.edu  (ISRG Root X2)
+ 317  OK           rubiconproject.com  (Amazon Root CA 1)
+ 318  OK           avast.com  (Sectigo Public Server Authentication Root R46)
+ 319  UNREACHABLE  douyincdn.com
+ 320  UNREACHABLE  akamaihd.net
+ 321  OK           debian.org  (ISRG Root X1)
+ 322  OK           myshopify.com  (ISRG Root X2)
+ 323  OK           browser-intake-datadoghq.com  (DigiCert Global Root G2)
+ 324  OK           wiley.com  (GTS Root R4)
+ 325  OK           mi.com  (DigiCert Global Root G2)
+ 326  OK           etsy.com  (GlobalSign Root R46)
+ 327  OK           adnxs.com  (DigiCert Global Root G3)
+ 328  OK           amazon.co.uk  (DigiCert Global Root G2)
+ 329  OK           slack.com  (ISRG Root X1)
+ 330  OK           www.clarity.ms  (DigiCert Global Root G2)
+ 331  UNREACHABLE  ripn.net
+ 332  OK           gmail.com  (GTS Root R4)
+ 333  OK           weebly.com  (ISRG Root X2)
+ 334  OK           php.net  (ISRG Root X2)
+ 335  UNREACHABLE  xcal.tv
+ 336  OK           smartadserver.com  (GTS Root R1)
+ 337  UNREACHABLE  spaceweb.pro
+ 338  OK           casalemedia.com  (ISRG Root X2)
+ 339  OK           onelink.me  (Amazon Root CA 1)
+ 340  OK           netflix.net  (GTS Root R1)
+ 341  UNREACHABLE  mangosip.ru
+ 342  OK           naver.com  (ISRG Root X2)
+ 343  UNREACHABLE  nr-data.net
+ 344  OK           aliyun.com  (GlobalSign Root R46)
+ 345  OK           bilibili.com  (GlobalSign Root CA - R3)
+ 346  OK           tp-link.com  (Amazon Root CA 1)
+ 347  OK           gnu.org  (ISRG Root X1)
+ 348  OK           ea.com  (DigiCert Global Root G2)
+ 349  OK           trustpilot.com  (Amazon Root CA 1)
+ 350  OK           dns.google  (GTS Root R4)
+ 351  OK           dell.com  (DigiCert Global Root G2)
+ 352  OK           cdc.gov  (DigiCert Global Root G3)
+ 353  UNREACHABLE  vkuser.net
+ 354  OK           checkpoint.com  (GlobalSign Root CA - R3)
+ 355  OK           zendesk.com  (ISRG Root X2)
+ 356  OK           launchdarkly.com  (ISRG Root X2)
+ 357  OK           un.org  (GlobalSign Root R46)
+ 358  OK           inmobi.com  (Sectigo Public Server Authentication Root R46)
+ 359  OK           tradingview.com  (Amazon Root CA 1)
+ 360  OK           nasa.gov  (ISRG Root X2)
+ 361  UNREACHABLE  online-metrix.net
+ 362  UNREACHABLE  volcfcdndvs.com
+ 363  OK           nvidia.com  (Amazon Root CA 1)
+ 364  OK           cm.com  (GTS Root R4)
+ 365  OK           opendns.com  (ISRG Root X1)
+ 366  OK           gitlab.com  (Sectigo Public Server Authentication Root R46)
+ 367  OK           drom.ru  (GlobalSign Root CA - R3)
+ 368  OK           taboola.com  (DigiCert Global Root G2)
+ 369  OK           google.cn  (GTS Root R4)
+ 370  UNREACHABLE  allawnos.com
+ 371  OK           issuu.com  (GlobalSign Root R46)
+ 372  OK           cloudflareinsights.com  (GTS Root R4)
+ 373  UNREACHABLE  sberbank.ru
+ 374  OK           washingtonpost.com  (DigiCert Global Root G3)
+ 375  UNREACHABLE  nflxvideo.net
+ 376  OK           espn.com  (Sectigo Public Server Authentication Root R46)
+ 377  UNREACHABLE  worldnic.com
+ 378  OK           stanford.edu  (USERTrust RSA Certification Authority)
+ 379  OK           bloomberg.com  (DigiCert Global Root G2)
+ 380  OK           tagomi.com  (GTS Root R4)
+ 381  OK           grammarly.com  (Amazon Root CA 1)
+ 382  UNREACHABLE  capcutapi.com
+ 383  OK           plesk.com  (GTS Root R4)
+ 384  OK           wsj.com  (Amazon Root CA 1)
+ 385  OK           branch.io  (Amazon Root CA 1)
+ 386  OK           netangels.ru  (ISRG Root X1)
+ 387  OK           globo.com  (ISRG Root X1)
+ 388  OK           live-video.net  (Amazon Root CA 1)
+ 389  OK           cookiedatabase.org  (ISRG Root X2)
+ 390  OK           amazon.de  (DigiCert Global Root G2)
+ 391  UNREACHABLE  tiktokv.us
+ 392  UNREACHABLE  samsungcloudsolution.com
+ 393  OK           astrumu.io  (ISRG Root X2)
+ 394  OK           name.com  (GTS Root R4)
+ 395  OK           bsky.app  (Amazon Root CA 1)
+ 396  OK           mzstatic.com  (DigiCert Global Root G2)
+ 397  OK           yandex.com  (GlobalSign Root E46)
+ 398  OK           amazontrust.com  (Amazon Root CA 1)
+ 399  UNREACHABLE  cdnbuild.net
+ 400  OK           www.vercel-dns-016.com  (ISRG Root X1)
+ 401  UNREACHABLE  shopifysvc.com
+ 402  UNREACHABLE  ibyteimg.com
+ 403  OK           calendly.com  (GTS Root R4)
+ 404  OK           hostgator.com  (GTS Root R4)
+ 405  OK           anthropic.com  (ISRG Root X2)
+ 406  OK           expireddomains.com  (GTS Root R4)
+ 407  OK           paloaltonetworks.com  (DigiCert Global Root G2)
+ 408  OK           www.scdn.co  (GlobalSign Root CA - R3)
+ 409  OK           crpt.ru  (ISRG Root X1)
+ 410  OK           www.netease.com  (DigiCert Global Root G2)
+ 411  OK           go.com  (Sectigo Public Server Authentication Root R46)
+ 412  OK           claude.ai  (ISRG Root X2)
+ 413  OK           unsplash.com  (GlobalSign Root CA - R3)
+ 414  OK           line.me  (GlobalSign Root R46)
+ 415  OK           duckduckgo.com  (DigiCert Global Root G2)
+ 416  OK           163.com  (DigiCert Global Root G2)
+ 417  OK           indeed.com  (GTS Root R4)
+ 418  OK           www.kwai-pro.com  (GlobalSign Root R46)
+ 419  UNREACHABLE  facebook.net
+ 420  OK           steamcommunity.com  (ISRG Root X1)
+ 421  UNREACHABLE  gandi-ns.fr
+ 422  OK           ampproject.org  (GTS Root R4)
+ 423  OK           dropcatch.com  (GTS Root R4)
+ 424  UNREACHABLE  heytapdl.com
+ 425  OK           okta.com  (Amazon Root CA 1)
+ 426  UNREACHABLE  beian.gov.cn
+ 427  OK           dailymotion.com  (Sectigo Public Server Authentication Root R46)
+ 428  OK           temu.com  (GoDaddy TLS Root CA - R1)
+ 429  UNREACHABLE  tiktokcdn-eu.com
+ 430  OK           aol.com  (Amazon Root CA 1)
+ 431  UNREACHABLE  tiktokv.eu
+ 432  UNREACHABLE  kaspersky-labs.com
+ 433  UNREACHABLE  firetvcaptiveportal.com
+ 434  OK           substack.com  (GTS Root R4)
+ 435  UNREACHABLE  awsglobalaccelerator.com
+ 436  UNREACHABLE  tencent-cloud.net
+ 437  OK           selectel.ru  (ISRG Root X1)
+ 438  OK           statsigapi.net  (ISRG Root X1)
+ 439  OK           appsflyer.com  (Amazon Root CA 1)
+ 440  UNREACHABLE  trueconf.net
+ 441  UNREACHABLE  crcdn.pro
+ 442  UNREACHABLE  on.aws
+ 443  OK           intel.com  (Sectigo Public Server Authentication Root R46)
+ 444  UNREACHABLE  adobe.net
+ 445  UNREACHABLE  samsungqbe.com
+ 446  OK           www.taobao.com  (GlobalSign Root R46)
+ 447  UNREACHABLE  myhuaweicloud.com
+ 448  UNREACHABLE  whecloud.com
+ 449  OK           bluehost.com  (GTS Root R4)
+ 450  OK           g.page  (GTS Root R4)
+ 451  FAIL         huawei.com  (needs Actalis TLS Server RSA Root CA 2025)
+ 452  UNREACHABLE  gcdn.co
+ 453  OK           arxiv.org  (Starfield Root Certificate Authority - G2)
+ 454  OK           fandom.com  (GTS Root R4)
+ 455  FAIL         yahoo.co.jp  (needs SECOM Security Communication RootCA2)
+ 456  UNREACHABLE  rocket-cdn.com
+ 457  OK           pixabay.com  (GTS Root R4)
+ 458  OK           dynatrace.com  (Amazon Root CA 1)
+ 459  OK           atlassian.net  (Amazon Root CA 1)
+ 460  OK           duolingo.com  (Amazon Root CA 1)
+ 461  OK           eye4.cn  (DigiCert Global Root G2)
+ 462  OK           businessinsider.com  (GlobalSign Root CA - R3)
+ 463  UNREACHABLE  impervadns.net
+ 464  OK           dotomi.com  (GlobalSign Root R46)
+ 465  OK           speedtest.net  (GlobalSign Root R46)
+ 466  UNREACHABLE  elasticbeanstalk.com
+ 467  OK           prodregistryv2.org  (ISRG Root X1)
+ 468  UNREACHABLE  myqcloud.com
+ 469  UNREACHABLE  dnspod.net
+ 470  OK           timeweb.ru  (GlobalSign Root CA - R3)
+ 471  UNREACHABLE  grammarly.io
+ 472  OK           walmart.com  (GlobalSign Root E46)
+ 473  OK           cnbc.com  (Amazon Root CA 1)
+ 474  OK           wp.com  (ISRG Root X2)
+ 475  UNREACHABLE  xiaomi.net
+ 476  OK           goodreads.com  (Amazon Root CA 1)
+ 477  OK           www.kwai.net  (GlobalSign Root CA - R3)
+ 478  OK           0xrpc.io  (ISRG Root X2)
+ 479  OK           www.miit.gov.cn  (Sectigo Public Server Authentication Root R46)
+ 480  OK           shalltry.com  (Amazon Root CA 1)
+ 481  UNREACHABLE  mybluehost.me
+ 482  OK           adsafeprotected.com  (Amazon Root CA 1)
+ 483  OK           wps.com  (DigiCert Global Root G2)
+ 484  OK           supercell.com  (Amazon Root CA 1)
+ 485  UNREACHABLE  dual-s-msedge.net
+ 486  OK           ietf.org  (GTS Root R4)
+ 487  OK           mcafee.com  (Sectigo Public Server Authentication Root R46)
+ 488  OK           mozilla.com  (GTS Root R1)
+ 489  OK           quora.com  (GTS Root R1)
+ 490  OK           shein.com  (DigiCert Global Root G2)
+ 491  UNREACHABLE  list-manage.com
+ 492  OK           statista.com  (Amazon Root CA 1)
+ 493  OK           run.app  (GTS Root R4)
+ 494  OK           doubleverify.com  (ISRG Root X2)
+ 495  OK           amazon.co.jp  (DigiCert Global Root G2)
+ 496  UNREACHABLE  tiktokpangle.us
+ 497  UNREACHABLE  xboxlive.com
+ 498  OK           aliexpress.com  (GlobalSign Root CA - R3)
+ 499  OK           noaa.gov  (ISRG Root X1)
+ 500  UNREACHABLE  ui-dns.com
+ 501  OK           addtoany.com  (GTS Root R4)
+ 502  OK           scribd.com  (ISRG Root X1)
+ 503  OK           adriver.ru  (GlobalSign Root R46)
+ 504  OK           npr.org  (Amazon Root CA 1)
+ 505  UNREACHABLE  wswebcdn.com
+ 506  OK           sina.com.cn  (DigiCert Global Root G2)
+ 507  UNREACHABLE  edgecdn.ru
+ 508  OK           ivi.ru  (GlobalSign Root CA - R3)
+ 509  OK           eventbrite.com  (Amazon Root CA 1)
+ 510  UNREACHABLE  vecdnlb.com
+ 511  OK           foxnews.com  (ISRG Root X1)
+ 512  UNREACHABLE  azure-dns.com
+ 513  OK           cloudns.net  (DigiCert Global Root G2)
+ 514  OK           markmonitor.com  (DigiCert Global Root G2)
+ 515  OK           newrelic.com  (DigiCert Global Root G2)
+ 516  OK           indiatimes.com  (DigiCert Global Root G3)
+ 517  OK           amzn.to  (ISRG Root X1)
+ 518  OK           blogger.com  (GTS Root R4)
+ 519  UNREACHABLE  singtelchina.cn
+ 520  UNREACHABLE  sc-gw.com
+ 521  OK           google.de  (GTS Root R4)
+ 522  OK           google.com.hk  (GTS Root R4)
+ 523  OK           behance.net  (ISRG Root X1)
+ 524  OK           share.google  (GTS Root R4)
+ 525  OK           adsrvr.org  (GlobalSign Root CA - R3)
+ 526  UNREACHABLE  adobedc.net
+ 527  UNREACHABLE  bdydns.com
+ 528  OK           docker.com  (ISRG Root X1)
+ 529  OK           trendmicro.com  (USERTrust ECC Certification Authority)
+ 530  OK           stackoverflow.com  (ISRG Root X2)
+ 531  OK           www.spotifycdn.com  (GlobalSign Root CA - R3)
+ 532  UNREACHABLE  nease.net
+ 533  OK           uol.com.br  (DigiCert Global Root G2)
+ 534  OK           www.githubusercontent.com  (ISRG Root X1)
+ 535  OK           media.net  (DigiCert Global Root G2)
+ 536  OK           tplinkcloud.com  (DigiCert Global Root G2)
+ 537  OK           openstreetmap.org  (ISRG Root X1)
+ 538  OK           mysql.com  (DigiCert Global Root G2)
+ 539  OK           teamviewer.com  (Sectigo Public Server Authentication Root R46)
+ 540  UNREACHABLE  ipv4only.arpa
+ 541  OK           slideshare.net  (ISRG Root X1)
+ 542  OK           www.vercel-dns-017.com  (ISRG Root X1)
+ 543  UNREACHABLE  bx-msedge.net
+ 544  OK           wildberries.ru  (ISRG Root X2)
+ 545  UNREACHABLE  exp-tas.com
+ 546  OK           sohu.com  (DigiCert Global Root G2)
+ 547  OK           capcut.com  (DigiCert Global Root G3)
+ 548  OK           ft.com  (Amazon Root CA 1)
+ 549  UNREACHABLE  adobedtm.com
+ 550  OK           mediatek.com  (GlobalSign Root CA - R3)
+ 551  OK           openx.net  (DigiCert Global Root G2)
+ 552  OK           chatgpt.site  (GTS Root R4)
+ 553  OK           oup.com  (Amazon Root CA 1)
+ 554  OK           firefox.com  (ISRG Root X1)
+ 555  OK           visualstudio.com  (DigiCert Global Root G2)
+ 556  OK           pushy.io  (Amazon Root CA 1)
+ 557  OK           www.ezvizlife.com  (GlobalSign Root CA - R3)
+ 558  OK           braze.com  (ISRG Root X2)
+ 559  UNREACHABLE  byteglb.com
+ 560  OK           oraclecloud.com  (DigiCert Global Root G2)
+ 561  OK           wired.com  (Amazon Root CA 1)
+ 562  UNREACHABLE  chinamobile.com
+ 563  OK           gosuslugi.ru  (GlobalSign Root CA - R3)
+ 564  UNREACHABLE  squarespacedns.com
+ 565  OK           fast.com  (DigiCert Global Root G2)
+ 566  OK           tandfonline.com  (GTS Root R4)
+ 567  OK           squarespace.com  (DigiCert Global Root G2)
+ 568  OK           cornell.edu  (Sectigo Public Server Authentication Root R46)
+ 569  UNREACHABLE  wbx2.com
+ 570  OK           tripadvisor.com  (Amazon Root CA 1)
+ 571  OK           jquery.com  (GTS Root R4)
+ 572  OK           time.com  (Starfield Root Certificate Authority - G2)
+ 573  OK           discord.media  (GTS Root R4)
+ 574  OK           free.fr  (Sectigo Public Server Authentication Root R46)
+ 575  OK           dreamhost.com  (Amazon Root CA 1)
+ 576  UNREACHABLE  e2ro.com
+ 577  OK           lijit.com  (Amazon Root CA 1)
+ 578  OK           rakuten.co.jp  (DigiCert Global Root G2)
+ 579  OK           www.herokuapp.com  (ISRG Root X1)
+ 580  OK           icloud-content.com  (DigiCert Global Root G2)
+ 581  OK           deviantart.com  (Amazon Root CA 1)
+ 582  OK           www.comcast.com  (Sectigo Public Server Authentication Root R46)
+ 583  OK           mobile.de  (Amazon Root CA 1)
+ 584  UNREACHABLE  qlivecdn.com
+ 585  OK           threads.com  (DigiCert Global Root G2)
+ 586  OK           360yield.com  (Amazon Root CA 1)
+ 587  OK           klaviyo.com  (Amazon Root CA 1)
+ 588  UNREACHABLE  live.net
+ 589  OK           force.com  (DigiCert Global Root G2)
+ 590  OK           www.svc.ms  (DigiCert Global Root G2)
+ 591  OK           eset.com  (ISRG Root X1)
+ 592  OK           dyndns.org  (DigiCert Global Root G2)
+ 593  OK           ca.gov  (DigiCert Global Root G2)
+ 594  OK           shop.app  (GTS Root R4)
+ 595  UNREACHABLE  vercel-dns-3.com
+ 596  UNREACHABLE  vidaahub.com
+ 597  UNREACHABLE  manulife-sinochem.com
+ 598  OK           bitrix24.ru  (GlobalSign Root R46)
+ 599  OK           usercontent.goog  (GTS Root R4)
+ 600  UNREACHABLE  enacdn.net
+ 601  UNREACHABLE  nodeflix.net
+ 602  OK           atlassian.com  (Amazon Root CA 1)
+ 603  UNREACHABLE  inner-active.mobi
+ 604  OK           playstation.com  (DigiCert Global Root G2)
+ 605  OK           featureassets.org  (ISRG Root X1)
+ 606  OK           digitalocean.com  (ISRG Root X2)
+ 607  OK           3lift.com  (Amazon Root CA 1)
+ 608  OK           aboutads.info  (GTS Root R4)
+ 609  OK           target.com  (GlobalSign Root R46)
+ 610  OK           usatoday.com  (ISRG Root X1)
+ 611  UNREACHABLE  plex.direct
+ 612  OK           vercel.app  (GTS Root R1)
+ 613  OK           ieee.org  (GlobalSign Root CA - R3)
+ 614  UNREACHABLE  footprintdns.com
+ 615  OK           www.hicloud.com  (GlobalSign Root CA - R3)
+ 616  OK           www.rlcdn.com  (Sectigo Public Server Authentication Root R46)
+ 617  OK           mdpi.com  (DigiCert Global Root G3)
+ 618  OK           wix.com  (ISRG Root X1)
+ 619  OK           avito.ru  (GlobalSign Root CA - R3)
+ 620  OK           unesco.org  (ISRG Root X2)
+ 621  UNREACHABLE  bunnyinfra.net
+ 622  OK           berkeley.edu  (GTS Root R4)
+ 623  OK           sagepub.com  (GTS Root R4)
+ 624  OK           archive.ph  (ISRG Root X2)
+ 625  OK           telegraph.co.uk  (Amazon Root CA 1)
+ 626  OK           hotjar.com  (Amazon Root CA 1)
+ 627  OK           translate.goog  (GTS Root R4)
+ 628  OK           beget.ru  (ISRG Root X1)
+ 629  OK           amazon.fr  (Amazon Root CA 1)
+ 630  OK           dailymail.com  (DigiCert Global Root G3)
+ 631  UNREACHABLE  alicdn.com
+ 632  OK           nintendo.com  (DigiCert Global Root G2)
+ 633  OK           amazon.ca  (Amazon Root CA 1)
+ 634  UNREACHABLE  twimg.com
+ 635  OK           ikea.com  (GTS Root R4)
+ 636  OK           ups.com  (DigiCert Global Root G2)
+ 637  OK           onetrust.com  (GTS Root R4)
+ 638  OK           accuweather.com  (DigiCert Global Root G2)
+ 639  OK           techcrunch.com  (GTS Root R4)
+ 640  OK           verisign.com  (DigiCert Global Root G2)
+ 641  OK           ngenix.net  (GlobalSign Root CA - R3)
+ 642  OK           palmplaystore.com  (DigiCert Global Root G2)
+ 643  OK           merriam-webster.com  (Amazon Root CA 1)
+ 644  OK           www.share-dns.com  (GTS Root R4)
+ 645  OK           mega.co.nz  (Sectigo Public Server Authentication Root R46)
+ 646  OK           jotform.com  (Sectigo Public Server Authentication Root R46)
+ 647  UNREACHABLE  nmrodam.com
+ 648  OK           archive.is  (ISRG Root X2)
+ 649  OK           2gis.com  (USERTrust ECC Certification Authority)
+ 650  UNREACHABLE  msidentity.com
+ 651  OK           www.tencent.com  (GlobalSign Root CA - R3)
+ 652  UNREACHABLE  t-msedge.net
+ 653  OK           sophos.com  (ISRG Root X1)
+ 654  UNREACHABLE  akamaitech.net
+ 655  OK           one.one  (ISRG Root X1)
+ 656  OK           meta.com  (DigiCert Global Root G2)
+ 657  UNREACHABLE  bytedns1.com
+ 658  UNREACHABLE  telephony.goog
+ 659  OK           service.gov.uk  (GlobalSign Root CA - R3)
+ 660  OK           loc.gov  (GTS Root R4)
+ 661  UNREACHABLE  ks-cdn.com
+ 662  OK           intercom.io  (Amazon Root CA 1)
+ 663  UNREACHABLE  samsungapps.com
+ 664  OK           stackadapt.com  (ISRG Root X1)
+ 665  UNREACHABLE  pangle.io
+ 666  OK           sharethrough.com  (GTS Root R4)
+ 667  UNREACHABLE  ad-tech.ru
+ 668  OK           ovh.net  (ISRG Root X1)
+ 669  OK           mikrotik.com  (DigiCert Global Root G2)
+ 670  UNREACHABLE  bidswitch.net
+ 671  OK           iso.org  (ISRG Root X2)
+ 672  OK           primevideo.com  (Amazon Root CA 1)
+ 673  OK           elpais.com  (ISRG Root X1)
+ 674  OK           optimizely.com  (ISRG Root X1)
+ 675  OK           www.kwaipros.com  (GlobalSign Root CA - R3)
+ 676  OK           britannica.com  (Amazon Root CA 1)
+ 677  UNREACHABLE  samsungacr.com
+ 678  OK           redhat.com  (DigiCert Global Root G2)
+ 679  OK           perplexity.ai  (GTS Root R4)
+ 680  OK           imgsmail.ru  (ISRG Root X1)
+ 681  OK           ddnss.de  (ISRG Root X1)
+ 682  OK           nike.com  (Amazon Root CA 1)
+ 683  OK           withgoogle.com  (GTS Root R4)
+ 684  UNREACHABLE  smaato.net
+ 685  OK           amazon.in  (Amazon Root CA 1)
+ 686  OK           surveymonkey.com  (Amazon Root CA 1)
+ 687  UNREACHABLE  my.com
+ 688  OK           binance.com  (DigiCert Global Root G2)
+ 689  UNREACHABLE  resolver.arpa
+ 690  OK           anydesk.com  (GTS Root R4)
+ 691  UNREACHABLE  cdn20.com
+ 692  UNREACHABLE  nstld.com
+ 693  OK           cambridge.org  (GTS Root R4)
+ 694  OK           xhamster.com  (ISRG Root X2)
+ 695  OK           kick.com  (GTS Root R4)
+ 696  OK           box.com  (DigiCert Global Root G2)
+ 697  UNREACHABLE  easebar.com
+ 698  OK           360.cn  (USERTrust RSA Certification Authority)
+ 699  OK           lemonde.fr  (ISRG Root X1)
+ 700  OK           cbsnews.com  (Sectigo Public Server Authentication Root R46)
+ 701  UNREACHABLE  dyingbirds.com
+ 702  OK           wb.ru  (ISRG Root X2)
+ 703  OK           ring.com  (Amazon Root CA 1)
+ 704  UNREACHABLE  libp2p.direct
+ 705  OK           gotinder.com  (Amazon Root CA 1)
+ 706  OK           yelp.com  (DigiCert Global Root G2)
+ 707  OK           hihonorcloud.com  (GlobalSign Root CA - R3)
+ 708  OK           vivoglobal.com  (DigiCert Global Root G2)
+ 709  OK           netcraze.io  (ISRG Root X2)
+ 710  UNREACHABLE  hstgr.net
+ 711  UNREACHABLE  bamgrid.com
+ 712  UNREACHABLE  typekit.net
+ 713  UNREACHABLE  yahoodns.net
+ 714  OK           cookielaw.org  (GTS Root R4)
+ 715  OK           fb.com  (DigiCert Global Root G2)
+ 716  FAIL         rustore.ru  (needs HARICA TLS RSA Root CA 2021)
+ 717  OK           outbrain.com  (ISRG Root X1)
+ 718  UNREACHABLE  usgovcloudapi.net
+ 719  OK           dailymail.co.uk  (DigiCert Global Root G3)
+ 720  OK           webempresa.eu  (Sectigo Public Server Authentication Root R46)
+ 721  OK           bandcamp.com  (GlobalSign Root R46)
+ 722  OK           amazon.es  (Amazon Root CA 1)
+ 723  OK           ya.ru  (GlobalSign Root E46)
+ 724  OK           linode.com  (ISRG Root X1)
+ 725  UNREACHABLE  googlezip.net
+ 726  OK           marriott.com  (Sectigo Public Server Authentication Root R46)
+ 727  OK           pinimg.com  (DigiCert Global Root G2)
+ 728  OK           stripchat.com  (GTS Root R4)
+ 729  OK           itch.io  (GTS Root R4)
+ 730  OK           bugsnag.com  (DigiCert Global Root G2)
+ 731  OK           uber.com  (DigiCert Global Root G2)
+ 732  OK           viber.com  (Amazon Root CA 1)
+ 733  UNREACHABLE  imrworldwide.com
+ 734  UNREACHABLE  herokudns.com
+ 735  OK           uk.com  (ISRG Root X1)
+ 736  OK           independent.co.uk  (GlobalSign Root CA - R3)
+ 737  OK           cnet.com  (GTS Root R4)
+ 738  UNREACHABLE  avsxappcaptiveportal.com
+ 739  OK           quantserve.com  (ISRG Root X1)
+ 740  OK           wpguardian.io  (GTS Root R4)
+ 741  OK           fda.gov  (IdenTrust Commercial Root CA 1)
+ 742  OK           fontawesome.com  (GTS Root R4)
+ 743  OK           wpguardian.com  (GTS Root R4)
+ 744  OK           amazon.it  (Amazon Root CA 1)
+ 745  UNREACHABLE  nel.goog
+ 746  UNREACHABLE  goskope.com
+ 747  OK           shopee.co.id  (GlobalSign Root R46)
+ 748  OK           mediafire.com  (Sectigo Public Server Authentication Root R46)
+ 749  OK           creativecdn.com  (DigiCert Global Root G2)
+ 750  OK           asus.com  (Sectigo Public Server Authentication Root R46)
+ 751  UNREACHABLE  ozone.ru
+ 752  UNREACHABLE  pvp.net
+ 753  UNREACHABLE  bidr.io
+ 754  UNREACHABLE  amagi.tv
+ 755  OK           globalsign.com  (GlobalSign Root R46)
+ 756  OK           yieldmo.com  (ISRG Root X1)
+ 757  OK           www.dbankcloud.com  (GlobalSign Root CA - R3)
+ 758  FAIL         vkontakte.ru  (needs HARICA TLS RSA Root CA 2021)
+ 759  OK           hostgator.com.br  (DigiCert Global Root G2)
+ 760  OK           gumgum.com  (Amazon Root CA 1)
+ 761  OK           python.org  (GlobalSign Root CA - R3)
+ 762  OK           www.agkn.com  (DigiCert Global Root G2)
+ 763  UNREACHABLE  alipaydns.com
+ 764  OK           google.co.uk  (GTS Root R4)
+ 765  UNREACHABLE  safebrowsing.apple
+ 766  OK           airbnb.com  (DigiCert Global Root G2)
+ 767  UNREACHABLE  1rx.io
+ 768  UNREACHABLE  nexthink.cloud
+ 769  OK           g.co  (GTS Root R4)
+ 770  OK           mailchimp.com  (DigiCert Global Root G2)
+ 771  OK           bild.de  (DigiCert Global Root G2)
+ 772  OK           homedepot.com  (DigiCert Global Root G2)
+ 773  UNREACHABLE  nintendo.net
+ 774  OK           imgur.com  (Sectigo Public Server Authentication Root R46)
+ 775  UNREACHABLE  shopeemobile.com
+ 776  OK           allegro.pl  (DigiCert Global Root G2)
+ 777  OK           hugedomains.com  (GTS Root R4)
+ 778  OK           mlb.com  (GTS Root R1)
+ 779  OK           eeroup.com  (Amazon Root CA 1)
+ 780  UNREACHABLE  criteo.net
+ 781  OK           consultant.ru  (GlobalSign Root CA - R3)
+ 782  UNREACHABLE  immedia-semi.com
+ 783  OK           amazonalexa.com  (Amazon Root CA 1)
+ 784  OK           nikkei.com  (Amazon Root CA 1)
+ 785  UNREACHABLE  steamstatic.com
+ 786  OK           www.crwdcntrl.net  (Amazon Root CA 1)
+ 787  OK           cdnvideo.ru  (ISRG Root X1)
+ 788  UNREACHABLE  craigslist.org
+ 789  OK           rfc-editor.org  (GTS Root R4)
+ 790  OK           mckinsey.com  (DigiCert Global Root G2)
+ 791  OK           shopee.com.br  (GlobalSign Root R46)
+ 792  OK           google.com.br  (GTS Root R4)
+ 793  UNREACHABLE  livejournal.com
+ 794  OK           zoom.com  (DigiCert Global Root G2)
+ 795  OK           amazon.co.za  (Amazon Root CA 1)
+ 796  OK           welt.de  (Amazon Root CA 1)
+ 797  OK           zillow.com  (Amazon Root CA 1)
+ 798  OK           www.samsungosp.com  (DigiCert Global Root G2)
+ 799  OK           wattpad.com  (Amazon Root CA 1)
+ 800  OK           apnews.com  (ISRG Root X2)
+ 801  OK           moloco.com  (ISRG Root X1)
+ 802  UNREACHABLE  cdnhwc1.com
+ 803  OK           recaptcha.net  (GTS Root R4)
+ 804  OK           lenovo.com  (DigiCert Global Root G2)
+ 805  OK           warnerbros.com  (GlobalSign Root CA - R3)
+ 806  OK           bestbuy.com  (DigiCert Global Root G3)
+ 807  OK           ameblo.jp  (DigiCert Global Root G2)
+ 808  OK           deepl.com  (GTS Root R4)
+ 809  OK           sedo.com  (Sectigo Public Server Authentication Root R46)
+ 810  UNREACHABLE  sc-cdn.net
+ 811  UNREACHABLE  edgcdn.net
+ 812  OK           wp.pl  (DigiCert Global Root G2)
+ 813  OK           adjust.com  (ISRG Root X1)
+ 814  OK           rakuten.com  (DigiCert Global Root G2)
+ 815  OK           zoho.com  (Sectigo Public Server Authentication Root R46)
+ 816  OK           fiverr.com  (GTS Root R4)
+ 817  OK           prnewswire.com  (GTS Root R4)
+ 818  OK           xvideos.com  (Sectigo Public Server Authentication Root R46)
+ 819  OK           ted.com  (Amazon Root CA 1)
+ 820  UNREACHABLE  akamaitechnologies.com
+ 821  UNREACHABLE  liadm.com
+ 822  OK           disneyplus.com  (GTS Root R1)
+ 823  OK           discordapp.com  (GTS Root R4)
+ 824  OK           mixpanel.com  (DigiCert Global Root G2)
+ 825  OK           cloudinary.com  (Go Daddy Root Certificate Authority - G2)
+ 826  OK           33across.com  (ISRG Root X1)
+ 827  OK           people.com  (ISRG Root X2)
+ 828  OK           erome.com  (USERTrust ECC Certification Authority)
+ 829  UNREACHABLE  dnse0.com
+ 830  UNREACHABLE  ovscdns.com
+ 831  OK           parklogic.com  (ISRG Root X2)
+ 832  OK           seznam.cz  (ISRG Root X1)
+ 833  OK           usda.gov  (DigiCert Global Root G2)
+ 834  OK           teads.tv  (Amazon Root CA 1)
+ 835  OK           usps.com  (Sectigo Public Server Authentication Root R46)
+ 836  OK           a-mo.net  (Amazon Root CA 1)
+ 837  OK           liftoff.io  (GTS Root R4)
+ 838  OK           vivo.com.cn  (DigiCert Global Root G2)
+ 839  OK           adform.net  (DigiCert Global Root G2)
+ 840  OK           onlyfans.com  (ISRG Root X2)
+ 841  OK           att.com  (DigiCert Global Root G2)
+ 842  UNREACHABLE  kunluncan.com
+ 843  OK           singular.net  (ISRG Root X2)
+ 844  OK           discogs.com  (Amazon Root CA 1)
+ 845  OK           fbsbx.com  (DigiCert Global Root G2)
+ 846  UNREACHABLE  turn.com
+ 847  OK           pendo.io  (GTS Root R1)
+ 848  OK           unpkg.com  (GTS Root R4)
+ 849  OK           myspace.com  (GTS Root R1)
+ 850  OK           cursor.sh  (ISRG Root X1)
+ 851  OK           life360.com  (Amazon Root CA 1)
+ 852  OK           agoda.com  (GTS Root R1)
+ 853  OK           academia.edu  (Amazon Root CA 1)
+ 854  OK           theverge.com  (GlobalSign Root CA - R3)
+ 855  UNREACHABLE  zpath.net
+ 856  OK           amazon.com.br  (Amazon Root CA 1)
+ 857  OK           netlify.app  (DigiCert Global Root G2)
+ 858  OK           pikabu.ru  (ISRG Root X1)
+ 859  UNREACHABLE  cloudsink.net
+ 860  OK           synology.com  (Amazon Root CA 1)
+ 861  OK           frontiersin.org  (Go Daddy Root Certificate Authority - G2)
+ 862  UNREACHABLE  dv.tech
+ 863  OK           pexels.com  (GTS Root R4)
+ 864  OK           chess.com  (GTS Root R4)
+ 865  OK           me.com  (DigiCert Global Root G2)
+ 866  OK           www.sentinelone.net  (Sectigo Public Server Authentication Root R46)
+ 867  OK           ebay.co.uk  (Sectigo Public Server Authentication Root R46)
+ 868  OK           no-ip.com  (DigiCert Global Root G2)
+ 869  OK           stackexchange.com  (ISRG Root X2)
+ 870  OK           www.gov.br  (GlobalSign Root CA - R3)
+ 871  OK           onetag-sys.com  (DigiCert Global Root G3)
+ 872  UNREACHABLE  ssl-images-amazon.com
+ 873  UNREACHABLE  azure-devices.net
+ 874  UNREACHABLE  wcdnga.com
+ 875  UNREACHABLE  adgrx.com
+ 876  OK           ipinfo.io  (ISRG Root X1)
+ 877  OK           focus.de  (DigiCert Global Root G3)
+ 878  OK           biblegateway.com  (Amazon Root CA 1)
+ 879  UNREACHABLE  cdn-vk.ru
+ 880  OK           appspot.com  (GTS Root R4)
+ 881  UNREACHABLE  yellowblue.io
+ 882  OK           ebay.de  (Sectigo Public Server Authentication Root R46)
+ 883  UNREACHABLE  bytefcdn.com
+ 884  OK           appcenter.ms  (DigiCert Global Root G2)
+ 885  UNREACHABLE  msftauth.net
+ 886  OK           px-cloud.net  (GTS Root R1)
+ 887  UNREACHABLE  oneme.ru
+ 888  OK           agora.io  (GoDaddy TLS Root CA - R1)
+ 889  OK           bitdefender.net  (DigiCert Global Root G2)
+ 890  OK           nbcnews.com  (DigiCert Global Root G2)
+ 891  OK           allaboutcookies.org  (GTS Root R4)
+ 892  OK           unrulymedia.com  (Amazon Root CA 1)
+ 893  OK           maricopa.gov  (GTS Root R4)
+ 894  UNREACHABLE  wbbasket.ru
+ 895  OK           figma.com  (Amazon Root CA 1)
+ 896  OK           pornhub.com  (DigiCert Global Root G3)
+ 897  UNREACHABLE  gtm-a2b2.com
+ 898  OK           worldbank.org  (GTS Root R4)
+ 899  OK           deloitte.com  (Sectigo Public Server Authentication Root R46)
+ 900  OK           flipkart.com  (GlobalSign Root CA - R3)
+ 901  OK           arcgis.com  (Amazon Root CA 1)
+ 902  UNREACHABLE  orderbox-dns.com
+ 903  OK           hbr.org  (Amazon Root CA 1)
+ 904  OK           readthedocs.io  (GTS Root R4)
+ 905  OK           daum.net  (DigiCert Global Root G2)
+ 906  OK           princeton.edu  (Sectigo Public Server Authentication Root R46)
+ 907  OK           fwmrm.net  (Sectigo Public Server Authentication Root R46)
+ 908  OK           disqus.com  (SSL.com TLS RSA Root CA 2022)
+ 909  OK           porkbun.com  (Amazon Root CA 1)
+ 910  OK           networkadvertising.org  (Amazon Root CA 1)
+ 911  OK           latimes.com  (Amazon Root CA 1)
+ 912  UNREACHABLE  vedsalb.com
+ 913  OK           conviva.com  (GTS Root R4)
+ 914  OK           wyzecam.com  (DigiCert Global Root G2)
+ 915  OK           bankofamerica.com  (DigiCert Global Root G2)
+ 916  OK           lg.com  (Amazon Root CA 1)
+ 917  OK           supabase.co  (ISRG Root X1)
+ 918  OK           epa.gov  (DigiCert Global Root G2)
+ 919  UNREACHABLE  dbankcloud.ru
+ 920  OK           blackberry.com  (DigiCert Global Root G2)
+ 921  OK           qualtrics.com  (DigiCert Global Root G2)
+ 922  OK           coupang.com  (Amazon Root CA 1)
+ 923  OK           jetbrains.com  (Amazon Root CA 1)
+ 924  OK           certcenter.com  (DigiCert Global Root G2)
+ 925  OK           mayoclinic.org  (Sectigo Public Server Authentication Root R46)
+ 926  OK           seedtag.com  (GTS Root R4)
+ 927  UNREACHABLE  dnse2.com
+ 928  UNREACHABLE  eu-1-id5-sync.com
+ 929  OK           classlink.com  (GTS Root R4)
+ 930  UNREACHABLE  amp-endpoint2.com
+ 931  UNREACHABLE  flashtalking.com
+ 932  OK           curseforge.com  (GTS Root R4)
+ 933  OK           mercadolivre.com.br  (Amazon Root CA 1)
+ 934  OK           amazon.com.au  (DigiCert Global Root G2)
+ 935  OK           patreon.com  (GTS Root R4)
+ 936  OK           poki.com  (ISRG Root X2)
+ 937  OK           odoo.com  (ISRG Root X1)
+ 938  OK           smilewanted.com  (GTS Root R4)
+ 939  OK           genius.com  (GTS Root R4)
+ 940  OK           it.com  (ISRG Root X2)
+ 941  OK           state.gov  (Amazon Root CA 1)
+ 942  OK           statuspage.io  (Amazon Root CA 3)
+ 943  OK           www.tiktokw.us  (DigiCert Global Root G3)
+ 944  OK           note.com  (GlobalSign Root CA - R3)
+ 945  OK           tailscale.com  (ISRG Root X1)
+ 946  OK           kleinanzeigen.de  (DigiCert Global Root G2)
+ 947  OK           mercadolibre.com.ar  (Amazon Root CA 1)
+ 948  OK           cootlogix.com  (ISRG Root X1)
+ 949  UNREACHABLE  volcgslb.com
+ 950  OK           telefonica.de  (DigiCert Global Root G2)
+ 951  OK           chaturbate.com  (DigiCert Global Root G3)
+ 952  UNREACHABLE  rwwsje.com
+ 953  OK           ys7.com  (GlobalSign Root R46)
+ 954  OK           youku.com  (GlobalSign Root CA - R3)
+ 955  OK           repubblica.it  (Amazon Root CA 1)
+ 956  UNREACHABLE  go-mpulse.net
+ 957  OK           www.leiniao.com  (ISRG Root X1)
+ 958  FAIL         t2.ru  (needs HARICA TLS ECC Root CA 2021)
+ 959  OK           character.ai  (GTS Root R4)
+ 960  UNREACHABLE  tbank.ru
+ 961  UNREACHABLE  a-msedge.net
+ 962  OK           xiaohongshu.com  (DigiCert Global Root G2)
+ 963  OK           washington.edu  (Sectigo Public Server Authentication Root R46)
+ 964  OK           otto.de  (DigiCert Global Root G2)
+ 965  UNREACHABLE  tubi.io
+ 966  OK           id5-sync.com  (ISRG Root X2)
+ 967  OK           docker.io  (Amazon Root CA 1)
+ 968  OK           eporner.com  (GlobalSign Root R46)
+ 969  OK           corriere.it  (ISRG Root X1)
+ 970  OK           buydomains.com  (GTS Root R4)
+ 971  UNREACHABLE  cdnhwc2.com
+ 972  UNREACHABLE  privacy-mgmt.com
+ 973  OK           thenai.org  (ISRG Root X2)
+ 974  OK           hm.com  (DigiCert Global Root G2)
+ 975  OK           trendyol.com  (GlobalSign Root CA - R3)
+ 976  UNREACHABLE  incapdns.net
+ 977  OK           mailchi.mp  (ISRG Root X1)
+ 978  OK           auth0.com  (ISRG Root X2)
+ 979  OK           lowes.com  (USERTrust ECC Certification Authority)
+ 980  OK           onet.pl  (DigiCert Global Root G2)
+ 981  OK           app-ads-services.com  (GTS Root R4)
+ 982  OK           jd.com  (GlobalSign Root CA - R3)
+ 983  UNREACHABLE  ddns.net
+ 984  OK           nexusmods.com  (GTS Root R4)
+ 985  UNREACHABLE  t-s1-msedge.net
+ 986  OK           change.org  (Amazon Root CA 1)
+ 987  OK           ancestry.com  (GTS Root R4)
+ 988  OK           xnxx.com  (Sectigo Public Server Authentication Root R46)
+ 989  UNREACHABLE  4dex.io
+ 990  OK           www.rt.ru  (GlobalSign Root R46)
+ 991  OK           caixa.gov.br  (Sectigo Public Server Authentication Root R46)
+ 992  OK           btloader.com  (GTS Root R4)
+ 993  UNREACHABLE  namecheaphosting.com
+ 994  OK           www.mhverifier.ru  (ISRG Root X2)
+ 995  FAIL         moe.video  (needs GlobalSign Root CA - R6)
+ 996  OK           umich.edu  (GTS Root R4)
+ 997  OK           miwifi.com  (DigiCert Global Root G2)
+ 998  OK           spamhaus.org  (ISRG Root X1)
+ 999  OK           xing.com  (Amazon Root CA 1)
+1000  OK           xhamster46.desi  (GTS Root R4)
