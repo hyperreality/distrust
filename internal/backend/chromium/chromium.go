@@ -20,6 +20,7 @@ package chromium
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -63,6 +64,20 @@ type Chromium struct {
 	mu      sync.Mutex
 	version map[string]int
 	probes  map[string]*probeResult
+	locs    []*location // tests: replaces discovery
+}
+
+// store is a browser policy source we can read and write.
+type store interface {
+	ID() string   // identity for de-duplication (resolved path / key)
+	Path() string // display path
+	Exists() bool
+	Read() (effective, error)
+	// Write stores values (ours plus carried-over foreign ones) and records
+	// ours as owned where the store cannot otherwise tell them apart.
+	Write(values, ours []string) error
+	// Remove drops our values, leaving keep where they share one list.
+	Remove(keep []string) error
 }
 
 // location is one policy store, possibly shared by several browsers
@@ -95,6 +110,9 @@ func binOverrides() map[string]string {
 }
 
 func (c *Chromium) locations() []*location {
+	if c.locs != nil {
+		return c.locs
+	}
 	var out []*location
 	byID := map[string]*location{}
 	over := binOverrides()
@@ -277,25 +295,32 @@ func (c *Chromium) sync(env *backend.Env, include *policy.Entry, exclude string)
 			errs = append(errs, err.Error())
 			continue
 		}
+		foreign := eff.Foreign
+		if eff.Owned != nil && !eff.OursExists && c.recorded(env, l.store.ID()) {
+			// We wrote here but the ownership marker is missing: values for
+			// CAs we manage are ours, not another administrator's.
+			foreign = withoutKeys(foreign, c.managedKeys(env))
+		}
 		if len(ours) == 0 {
-			if eff.OursExists {
+			reclaimed := eff.Owned != nil && len(foreign) < len(eff.Foreign)
+			if eff.OursExists || reclaimed {
 				env.Logf(c.Name(), "remove %s (%s)", l.store.Path(), l.names())
 				if !env.DryRun {
-					if err := l.store.Remove(); err != nil {
+					if err := l.store.Remove(foreign); err != nil {
 						errs = append(errs, err.Error())
 					}
 				}
 			}
 			continue
 		}
-		want := uniqueBySPKI(append(append([]string{}, ours...), eff.Foreign...))
+		want := uniqueBySPKI(append(append([]string{}, ours...), foreign...))
 		touched = append(touched, l.store.ID())
-		if sameSet(want, eff.Ours) {
+		if sameSet(want, eff.Ours) && (eff.Owned == nil || sameKeys(ours, eff.Owned)) {
 			continue
 		}
 		carried := ""
-		if len(eff.Foreign) > 0 {
-			carried = fmt.Sprintf(" (+%d carried over from %s)", len(eff.Foreign), eff.ForeignSource)
+		if len(foreign) > 0 {
+			carried = fmt.Sprintf(" (+%d carried over from %s)", len(foreign), eff.ForeignSource)
 		}
 		env.Logf(c.Name(), "write %d distrusted key(s)%s to %s (%s)", len(want), carried, l.store.Path(), l.names())
 		if eff.OverriddenBy != "" {
@@ -311,6 +336,109 @@ func (c *Chromium) sync(env *backend.Env, include *policy.Entry, exclude string)
 		return touched, fmt.Errorf("%s", strings.Join(errs, "; "))
 	}
 	return touched, nil
+}
+
+// recorded reports whether any of our state records names store id.
+func (c *Chromium) recorded(env *backend.Env, id string) bool {
+	for _, eid := range env.State.IDs(c.Name()) {
+		var rec record
+		if env.State.Get(c.Name(), eid, &rec) {
+			for _, s := range rec.Stores {
+				if s == id {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// managedKeys is the SPKI key of every CA this backend manages or managed:
+// policy entries targeting it and entries it still holds records for.
+func (c *Chromium) managedKeys(env *backend.Env) map[string]bool {
+	keys := map[string]bool{}
+	add := func(e *policy.Entry) {
+		for _, v := range spkiValues(e) {
+			keys[spkiKey(v)] = true
+		}
+	}
+	if env.Policy != nil {
+		for i := range env.Policy.Entries {
+			if e := &env.Policy.Entries[i]; e.Targets(c.Name()) {
+				add(e)
+			}
+		}
+	}
+	for _, id := range env.State.IDs(c.Name()) {
+		if e, ok := env.State.Entries[id]; ok {
+			add(&e)
+		}
+	}
+	return keys
+}
+
+func withoutKeys(vals []string, keys map[string]bool) []string {
+	var out []string
+	for _, v := range vals {
+		if !keys[spkiKey(v)] {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// sameKeys reports whether vals are exactly the SPKI keys in keys.
+func sameKeys(vals []string, keys map[string]bool) bool {
+	seen := map[string]bool{}
+	for _, v := range vals {
+		k := spkiKey(v)
+		if !keys[k] {
+			return false
+		}
+		seen[k] = true
+	}
+	return len(seen) == len(keys)
+}
+
+// splitOwned classifies a list shared with other administrators (a registry
+// policy key) using the SPKI keys in our ownership marker. Legacy markers
+// held the values themselves.
+func splitOwned(values, marker []string, haveMarker bool, source string) effective {
+	eff := effective{Effective: values, OursExists: haveMarker, Owned: map[string]bool{}}
+	for _, m := range marker {
+		if isSPKIKey(m) {
+			eff.Owned[m] = true
+		} else if m != "" {
+			eff.Owned[spkiKey(m)] = true
+		}
+	}
+	if haveMarker {
+		eff.Ours = values
+	}
+	for _, v := range values {
+		if !eff.Owned[spkiKey(v)] {
+			eff.Foreign = append(eff.Foreign, v)
+			eff.ForeignSource = source
+		}
+	}
+	return eff
+}
+
+// ownedKeys is the marker content for ours.
+func ownedKeys(ours []string) []string {
+	var out []string
+	for _, v := range uniqueBySPKI(ours) {
+		out = append(out, spkiKey(v))
+	}
+	return out
+}
+
+func isSPKIKey(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	_, err := hex.DecodeString(s)
+	return err == nil
 }
 
 func sameSet(a, b []string) bool {
@@ -415,6 +543,9 @@ type effective struct {
 	Foreign       []string // value from the highest-priority other source
 	ForeignSource string
 	OverriddenBy  string // a source that beats ours, if any
+	// Owned holds the SPKI keys our marker claims, for stores where our
+	// values share one list with others (registry); nil for file stores.
+	Owned map[string]bool
 }
 
 // lenientJSON parses Chromium's relaxed JSON (comments, trailing commas).

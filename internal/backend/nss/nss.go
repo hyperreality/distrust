@@ -59,9 +59,27 @@ func (n *NSS) Description() string {
 	return "Mozilla NSS databases (Firefox, Thunderbird, Chromium ~/.pki/nssdb, /etc/pki/nssdb)"
 }
 
-func certutil() string { return sysx.LookPath("certutil", toolDirs...) }
-func vfychain() string { return sysx.LookPath("vfychain", toolDirs...) }
-func modutil() string  { return sysx.LookPath("modutil", toolDirs...) }
+func certutil() string { return nssTool("certutil") }
+func vfychain() string { return nssTool("vfychain") }
+func modutil() string  { return nssTool("modutil") }
+
+// nssTool finds an NSS command-line tool. On Windows, PATH holds Microsoft's
+// unrelated certutil.exe (System32), which must never be used.
+func nssTool(name string) string {
+	p := sysx.LookPath(name, toolDirs...)
+	if runtime.GOOS == "windows" && underSystemRoot(p) {
+		return sysx.FindIn(name, toolDirs...)
+	}
+	return p
+}
+
+func underSystemRoot(p string) bool {
+	root := os.Getenv("SystemRoot")
+	if root == "" {
+		root = `C:\Windows`
+	}
+	return p != "" && strings.HasPrefix(strings.ToLower(p), strings.ToLower(strings.TrimRight(root, `\`)+`\`))
+}
 
 func (n *NSS) Detect(env *backend.Env) backend.Detection {
 	d := backend.Detection{}
@@ -77,7 +95,7 @@ func (n *NSS) Detect(env *backend.Env) backend.Detection {
 	}
 	cu := certutil()
 	if cu == "" {
-		d.Reason = "certutil not found (install libnss3-tools / nss-tools / brew nss)"
+		d.Reason = "NSS certutil not found (install libnss3-tools / nss-tools / brew nss; on Windows an NSS build in C:\\Program Files\\NSS\\bin)"
 		return d
 	}
 	d.Tools = append(d.Tools, cu)

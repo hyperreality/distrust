@@ -81,7 +81,12 @@ func LookPath(name string, extra ...string) string {
 	if p, err := exec.LookPath(name); err == nil {
 		return p
 	}
-	for _, pat := range extra {
+	return FindIn(name, extra...)
+}
+
+// FindIn looks for an executable only in dirs (glob patterns allowed).
+func FindIn(name string, dirs ...string) string {
+	for _, pat := range dirs {
 		matches, _ := filepath.Glob(filepath.Join(pat, name+exeSuffix))
 		for _, m := range matches {
 			if fi, err := os.Stat(m); err == nil && !fi.IsDir() {

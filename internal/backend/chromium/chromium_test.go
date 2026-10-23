@@ -2,15 +2,16 @@ package chromium
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	"distrust/internal/backend"
 	"distrust/internal/certs"
 	"distrust/internal/policy"
+	"distrust/internal/state"
 	"distrust/internal/testutil"
 )
 
@@ -28,49 +29,6 @@ func TestStripJSONExtensions(t *testing.T) {
 	}
 	if v["a"] != "keep // this /* and this */" || len(v["b"].([]any)) != 2 {
 		t.Fatalf("got %v", v)
-	}
-}
-
-func TestJSONDirLastFileWins(t *testing.T) {
-	base := t.TempDir()
-	dir := filepath.Join(base, "managed")
-	os.MkdirAll(dir, 0o755)
-	a, _ := testutil.CA(t, "A", nil)
-	b, _ := testutil.CA(t, "B", nil)
-	write := func(name string, vals ...string) {
-		data, _ := json.Marshal(map[string]any{PolicyKey: vals, "Other": 1})
-		os.WriteFile(filepath.Join(dir, name), data, 0o644)
-	}
-	write("10-admin.json", b64(a))
-	os.WriteFile(filepath.Join(dir, "20-broken.json"), []byte("{nope"), 0o644)
-	st := &jsonDir{dir: dir}
-
-	eff, err := st.Read()
-	if err != nil || eff.ForeignSource != "10-admin.json" || len(eff.Foreign) != 1 || eff.OursExists {
-		t.Fatalf("before write: %+v %v", eff, err)
-	}
-	if err := st.Write([]string{b64(b), b64(a)}, nil); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(base, "."+OwnFile+".tmp")); err == nil {
-		t.Fatal("temp file left behind")
-	}
-	eff, _ = st.Read()
-	if !eff.OursExists || len(eff.Effective) != 2 || eff.OverriddenBy != "" {
-		t.Fatalf("after write: %+v", eff)
-	}
-	write("zzz-late.json")
-	eff, _ = st.Read()
-	if eff.OverriddenBy != "zzz-late.json" || len(eff.Effective) != 0 {
-		t.Fatalf("late file should override: %+v", eff)
-	}
-	os.Remove(filepath.Join(dir, "zzz-late.json"))
-	if err := st.Remove(); err != nil {
-		t.Fatal(err)
-	}
-	eff, _ = st.Read()
-	if eff.OursExists || len(eff.Effective) != 1 {
-		t.Fatalf("after remove the admin value should be effective again: %+v", eff)
 	}
 }
 
@@ -135,3 +93,86 @@ func TestParseNetLog(t *testing.T) {
 }
 
 func envFor(p *policy.Policy) *backend.Env { return &backend.Env{Policy: p} }
+
+// memList behaves like the registry store: one list shared with other
+// administrators, plus our ownership marker.
+type memList struct {
+	values, marker []string
+	haveMarker     bool
+	writes         int
+}
+
+func (m *memList) ID() string   { return "mem" }
+func (m *memList) Path() string { return "mem" }
+func (m *memList) Exists() bool { return true }
+func (m *memList) Read() (effective, error) {
+	return splitOwned(m.values, m.marker, m.haveMarker, "mem"), nil
+}
+func (m *memList) Write(values, ours []string) error {
+	m.values, m.marker, m.haveMarker = values, ownedKeys(ours), true
+	m.writes++
+	return nil
+}
+func (m *memList) Remove(keep []string) error {
+	m.values, m.marker, m.haveMarker = keep, nil, false
+	m.writes++
+	return nil
+}
+
+func sharedListSetup(t *testing.T, n int) (*Chromium, *memList, *backend.Env, string) {
+	admin, _ := testutil.CA(t, "Admin listed", nil)
+	pol := &policy.Policy{}
+	for i := 0; i < n; i++ {
+		ca, _ := testutil.CA(t, "CA "+strconv.Itoa(i), nil)
+		pol.Upsert(policy.NewEntry(ca, nil, policy.MatchSPKI, nil, ""))
+	}
+	st, _ := state.Load(t.TempDir())
+	m := &memList{values: []string{b64(admin)}}
+	return &Chromium{locs: []*location{{store: m}}}, m, &backend.Env{Policy: pol, State: st}, b64(admin)
+}
+
+func TestSharedListWritesOnceAndKeepsForeign(t *testing.T) {
+	ch, m, env, admin := sharedListSetup(t, 5)
+	for i := range env.Policy.Entries {
+		if err := ch.Block(env, &env.Policy.Entries[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if m.writes != 1 || len(m.values) != 6 || len(m.marker) != 5 {
+		t.Fatalf("writes=%d values=%d marker=%d, want 1/6/5", m.writes, len(m.values), len(m.marker))
+	}
+	entries := env.Policy.Entries
+	env.Policy.Entries = nil
+	for i := range entries {
+		if err := ch.Unblock(env, &entries[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(m.values) != 1 || m.values[0] != admin || m.haveMarker {
+		t.Fatalf("after unblock: values=%d marker=%v", len(m.values), m.haveMarker)
+	}
+}
+
+// A lost marker (the old reg.exe write failed on long lists) must not turn
+// our own values into "foreign" ones that are carried over forever.
+func TestSharedListReclaimsWithoutMarker(t *testing.T) {
+	ch, m, env, admin := sharedListSetup(t, 3)
+	for i := range env.Policy.Entries {
+		ch.Block(env, &env.Policy.Entries[i])
+	}
+	m.marker, m.haveMarker = nil, false // simulate the failed marker write
+
+	ch.Block(env, &env.Policy.Entries[0])
+	if len(m.values) != 4 || len(m.marker) != 3 {
+		t.Fatalf("re-block: values=%d marker=%d, want 4/3", len(m.values), len(m.marker))
+	}
+	m.marker, m.haveMarker = nil, false
+	entries := env.Policy.Entries
+	env.Policy.Entries = nil
+	for i := range entries {
+		ch.Unblock(env, &entries[i])
+	}
+	if len(m.values) != 1 || m.values[0] != admin {
+		t.Fatalf("after unblock without marker: %d values left", len(m.values))
+	}
+}

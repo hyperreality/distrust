@@ -16,18 +16,6 @@ import (
 // after conventional names so our value wins over earlier files.
 const OwnFile = "zz-distrust.json"
 
-// store is a browser policy source we can read and write.
-type store interface {
-	ID() string   // identity for de-duplication (resolved path / key)
-	Path() string // display path
-	Exists() bool
-	Read() (effective, error)
-	// Write stores ours plus carried-over foreign values (already merged in
-	// values for file stores; kept apart where the store can't tell them apart).
-	Write(values, ours []string) error
-	Remove() error
-}
-
 // jsonDir is Linux's /etc/.../policies/managed directory.
 type jsonDir struct{ dir string }
 
@@ -126,7 +114,8 @@ func (j *jsonDir) Write(values, _ []string) error {
 	return os.Rename(tmp, j.Path())
 }
 
-func (j *jsonDir) Remove() error {
+// Remove deletes our file; foreign values live in other files, so keep is unused.
+func (j *jsonDir) Remove(keep []string) error {
 	err := os.Remove(j.Path())
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
